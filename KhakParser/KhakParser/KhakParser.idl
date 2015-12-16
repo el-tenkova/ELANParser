@@ -1,0 +1,50 @@
+// KhakParser.idl : IDL source for KhakParser
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (KhakParser.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+    [
+        object,
+        uuid(1CB13316-908E-4EBD-88CA-1EFFE9441016),
+        dual,
+        helpstring("IKhParser Interface"),
+        pointer_default(unique),
+    ]
+    interface IKhParser : IDispatch
+    {
+        [id(1), helpstring("method Init")] HRESULT Init(int cSafeArr, BSTR www, BSTR dict, BSTR notfound, [out, retval] long *hRes );
+        [id(2), helpstring("method Terminate")] HRESULT Terminate([out, retval] long *hRes );
+        [id(3), helpstring("method DoParse")] HRESULT DoParse( BSTR InputWord, [out, retval] long *hRes );
+        [id(4), helpstring("method GetHomonymNum")] HRESULT GetHomonymNum( [out, retval] int* cNumOutput );
+        [id(5), helpstring("method GetNextHomonym")] HRESULT GetNextHomonym( [in, out] SAFEARRAY( short ) *lpHomonym );
+        [id(6), helpstring("method Normalize")] HRESULT Normalize( BSTR InputWord, [in, out] SAFEARRAY( short ) *lpHomonym );
+        [id(7), helpstring("method AddKhakSent")] HRESULT AddKhakSent( BSTR InputSent, [out, retval] long *hRes );
+        [id(8), helpstring("method AddRusSent")] HRESULT AddRusSent( BSTR InputSent, [out, retval] long *hRes );
+        [id(9), helpstring("method SaveToELAN")] HRESULT SaveToELAN( BSTR ElanPath, [out, retval] long *hRes );
+
+    };
+
+[
+    uuid(743F8BDE-1839-4C4C-9518-9A3ABFAA1BDF),
+    version(1.0),
+]
+
+library KhakParserLib
+{
+        importlib("stdole32.tlb");
+        importlib("stdole2.tlb");
+        [
+            uuid(8E01F725-F6EA-4B08-BE86-7E758B0AEF48),
+            helpstring("KhParser Class")
+        ]
+
+        coclass KhParser
+        {
+            [default] interface IKhParser;
+
+        };
+};

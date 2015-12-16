@@ -115,11 +115,11 @@ timeNext = 0
 c = 0
 Set para = ActiveDocument.Paragraphs.item(1)
 For i = 1 To p
-    c = para.Range.Words.count
+    c = para.Range.words.count
     Title = ""
     wrd = ""
     For j = 1 To c
-        Title = Title + para.Range.Words.item(j)
+        Title = Title + para.Range.words.item(j)
     Next j
 
     If Len(Title) Then
@@ -212,7 +212,7 @@ If text <> "" Then
     Line = Line & time_begin & ";" & time_next & ";" & text & ";" & translation & vbCrLf
     fsT.WriteText Line
 End If
-NameCSV = ActiveDocument.Path & "\" & Mid$(ActiveDocument.Name, 1, InStrRev(ActiveDocument.Name, ".")) & "csv"
+NameCSV = ActiveDocument.Path & "\" & Mid$(ActiveDocument.name, 1, InStrRev(ActiveDocument.name, ".")) & "csv"
 fsT.SaveToFile NameCSV, 2
 fsT.Close
 esT.SaveToFile ActiveDocument.Path & "\!!err.txt", 2
@@ -315,7 +315,7 @@ For Num = 1 To 4
 Next Num
 ' Запись последнего блока файла
 Call elProc.writeTail(fsT)
-NameCSV = ActiveDocument.Path & "\" & Mid$(ActiveDocument.Name, 1, InStrRev(ActiveDocument.Name, ".")) & "eaf"
+NameCSV = ActiveDocument.Path & "\" & Mid$(ActiveDocument.name, 1, InStrRev(ActiveDocument.name, ".")) & "eaf"
 fsT.SaveToFile NameCSV, 2
 fsT.Close
 esT.SaveToFile ActiveDocument.Path & "\!!err.txt", 2
@@ -338,9 +338,9 @@ Public Function wordsCount(para As Paragraph) As Long
     Dim col As Long
     punct = ".,:;!?"
     col = 0
-    c = para.Range.Words.count - 1
+    c = para.Range.words.count - 1
     For i = 1 To c
-        If InStr(punct, Mid(para.Range.Words.item(i), 1, 1)) = 0 Then
+        If InStr(punct, Mid(para.Range.words.item(i), 1, 1)) = 0 Then
             col = col + 1
         End If
     Next i
@@ -431,7 +431,7 @@ Sub DoParseKhakas()
     c = 0
     Set para = theDoc.Paragraphs.item(1)
     For i = 1 To p
-        c = para.Range.Words.count
+        c = para.Range.words.count
 
         If para.Range.Font.Italic = True Then
             If Table1.Rows.count < 4 Then
@@ -453,9 +453,9 @@ Sub DoParseKhakas()
             wrd = ""
             col = 1
             For j = 1 To c - 1
-                If InStr(punct, Mid(para.Range.Words.item(j), 1, 1)) = 0 Then
-                    Table1.Cell(1, col).Range.text = para.Range.Words.item(j)
-                    normWord = Normalize(para.Range.Words.item(j), regExpObj, repl)
+                If InStr(punct, Mid(para.Range.words.item(j), 1, 1)) = 0 Then
+                    Table1.cell(1, col).Range.text = para.Range.words.item(j)
+                    normWord = Normalize(para.Range.words.item(j), regExpObj, repl)
                     objHTTP.Open "post", strServ & strData & normWord, False
                     objHTTP.Send strData
                     If objHTTP.Status = 200 Then
@@ -482,7 +482,7 @@ Sub DoParseKhakas()
                         str1 = str1 & homonym.item("affixes") & vbCrLf
                         str1 = str1 & homonym.item("form") & vbCrLf
                         'str2 = str2 & homonym.item("meaning") & homonym.item("form") & vbCrLf
-                        Table1.Cell(2, col).Range.text = str1
+                        Table1.cell(2, col).Range.text = str1
                         'Table1.Cell(3, col).Range.text = str2
                         
                     Next homonym
@@ -490,16 +490,16 @@ Sub DoParseKhakas()
                     
                 Else
                     
-                    Table1.Cell(1, col).Range.text = para.Range.Words.item(j)
-                    Table1.Cell(1, col - 1).Merge Table1.Cell(1, col)
-                    Table1.Cell(1, col - 1).Range.Find.Execute findtext:="^0013", replacewith:="", Replace:=wdReplaceAll
+                    Table1.cell(1, col).Range.text = para.Range.words.item(j)
+                    Table1.cell(1, col - 1).Merge Table1.cell(1, col)
+                    Table1.cell(1, col - 1).Range.Find.Execute findtext:="^0013", replacewith:="", Replace:=wdReplaceAll
 
-                    If Len(Table1.Cell(2, col - 1).Range.text) > 2 Then
-                        Table1.Cell(2, col).Range.text = para.Range.Words.item(j)
-                        Table1.Cell(2, col - 1).Merge Table1.Cell(2, col)
-                        Table1.Cell(2, col - 1).Range.Find.Execute findtext:="^0013", replacewith:="", Replace:=wdReplaceAll
+                    If Len(Table1.cell(2, col - 1).Range.text) > 2 Then
+                        Table1.cell(2, col).Range.text = para.Range.words.item(j)
+                        Table1.cell(2, col - 1).Merge Table1.cell(2, col)
+                        Table1.cell(2, col - 1).Range.Find.Execute findtext:="^0013", replacewith:="", Replace:=wdReplaceAll
                     Else
-                        Table1.Cell(2, col - 1).Merge Table1.Cell(2, col)
+                        Table1.cell(2, col - 1).Merge Table1.cell(2, col)
                     End If
                     'Table1.Cell(3, col - 1).Merge Table1.Cell(3, col)
                     

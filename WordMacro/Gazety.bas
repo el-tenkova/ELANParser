@@ -39,8 +39,8 @@ Sub writeColumn(theDoc As Document, number As Long, Table1 As table)
         End If
         If cs <> 0 Then
             For j = 1 To cs
-                Table1.Cell(count, number).Range.text = para.Range.Sentences.item(j).text
-                Table1.Cell(count, number).Range.Find.Execute findtext:="^0013", replacewith:="", Replace:=wdReplaceAll
+                Table1.cell(count, number).Range.text = para.Range.Sentences.item(j).text
+                Table1.cell(count, number).Range.Find.Execute findtext:="^0013", replacewith:="", Replace:=wdReplaceAll
                 If count = 100 Then
                     Exit For
                 End If
@@ -172,7 +172,7 @@ Sub ParallelToELAN()
 '            Set row = tabl.Rows.item(Num)
         timeIdx = Num
         For j = 1 To cr 'row.Cells.count
-            text = Table1.Cell(j, Num).Range.text
+            text = Table1.cell(j, Num).Range.text
 '                row.Cells.item (j)
             time1 = timeIdx
             time2 = timeIdx + delta
@@ -198,7 +198,7 @@ Sub ParallelToELAN()
     Next Num
     ' Запись последнего блока файла
     Call elProc.writeTail(fsT)
-    NameCSV = theDoc.Path & "\" & Mid$(theDoc.Name, 1, InStrRev(theDoc.Name, ".")) & "eaf"
+    NameCSV = theDoc.Path & "\" & Mid$(theDoc.name, 1, InStrRev(theDoc.name, ".")) & "eaf"
     fsT.SaveToFile NameCSV, 2
     fsT.Close
     'esT.SaveToFile ActiveDocument.Path & "\!!err.txt", 2
@@ -208,7 +208,7 @@ End Sub
 
 Sub ParallelToGlossed()
     Dim theDoc As Document
-    Set theDoc = Documents.Open("c:\ELAN\GAZETY\Parallel\statii-tr-parall.docx")
+    Set theDoc = Documents.Open("c:\ELAN\GAZETY\Elvira&Alya\Statii-tr-parall-1.doc") '"c:\ELAN\GAZETY\Parallel\statii-tr-parall.docx")
     Dim newDoc As Document
     
     Set newDoc = Documents.Add()
@@ -216,7 +216,7 @@ Sub ParallelToGlossed()
        
     Dim Table1 As table
     Set Table1 = theDoc.Tables.item(1)
-    cr = 5 'Table1.Rows.count
+    cr = Table1.Rows.count
     
     Dim newTable As table
     
@@ -241,20 +241,20 @@ Sub ParallelToGlossed()
         'первая строка - предложение на хакасском
         'последняя строка - предложение на русском
         ' все остальные строки - слова + результаты парсирования
-        Dim curCell As Cell
-        Set curCell = Table1.Cell(1, 1)
-        Dim newCell As Cell
+        Dim curCell As cell
+        Set curCell = Table1.cell(1, 1)
+        Dim newCell As cell
         
-        For i = 1 To cr + 1
-            c = curCell.Range.Words.count
+        For i = 1 To cr
+            c = curCell.Range.words.count
             If c > 1 Then
                 ReDim arRows(c)
                 arRows(0) = curCell.Range.text
                 r = 1
                 For j = 1 To c - 1
-                    ch = Mid(curCell.Range.Words.item(j), 1, 1)
+                    ch = Mid(curCell.Range.words.item(j), 1, 1)
                     If InStr(punct, ch) = 0 Then
-                        arRows(r) = curCell.Range.Words.item(j)
+                        arRows(r) = curCell.Range.words.item(j)
                         r = r + 1
                     End If
                 Next j
@@ -266,8 +266,8 @@ Sub ParallelToGlossed()
             End If
             Set curCell = curCell.Next
             
-            AddTable = False
-            If AddTable Then
+'            AddTable = True
+'            If AddTable Then
             Set newTable = newDoc.Tables.Add(Range1, r, 2)
             newTable.Borders.OutsideLineStyle = wdLineStyleSingle
             newTable.Borders.InsideLineStyle = wdLineStyleSingle
@@ -280,7 +280,7 @@ Sub ParallelToGlossed()
             newTable.Rows(r).Range.text = arRows(r - 1)
             newTable.Rows(r).Range.Find.Execute findtext:="^0013", replacewith:="", Replace:=wdReplaceAll
             
-            Set newCell = newTable.Cell(2, 1)
+            Set newCell = newTable.cell(2, 1)
             For p = 2 To r - 1
                 newCell.Range.text = arRows(p - 1)
                 Set newCell = newCell.Next
@@ -288,7 +288,7 @@ Sub ParallelToGlossed()
 '                newTable.Cell(p, 1).Range.text = arRows(p - 1)
             Next p
             If newTable.Rows.count > 2 Then
-                Set newCell = newTable.Cell(2, 2)
+                Set newCell = newTable.cell(2, 2)
                 For p = 1 To r - 2
                     res = khPars.DoParse(arRows(p))
                     If res = S_OK Then
@@ -321,11 +321,19 @@ Sub ParallelToGlossed()
             Selection.InsertAfter ("" & vbCrLf)
             Selection.EndKey wdStory
             Set Range1 = Selection.Range
-            Else ' AddTable = False
-            For p = 1 To r - 2
-                res = khPars.DoParse(arRows(p))
+'            Else ' AddTable = False
+            For p = 0 To r - 1
+                If p = 0 Then
+                    res = khPars.AddKhakSent(Mid(arRows(p), 1, Len(arRows(p)) - 2))
+                Else
+                    If p = r - 1 Then
+                        res = khPars.AddRusSent(Mid(arRows(p), 1, Len(arRows(p)) - 2))
+                    Else
+                        res = khPars.DoParse(arRows(p))
+                    End If
+                End If
             Next p
-            End If ' AddTable
+ '           End If ' AddTable
             Debug.Print i
             'If i = 300 Or i = 600 Or i = 900 Then
             '    Debug.Print i
@@ -333,6 +341,7 @@ Sub ParallelToGlossed()
             
         Next i
     End If
+    Call khPars.SaveToELAN("c:\ELAN\GAZETY\Parallel\statii-tr-parall.eaf")
     Call khPars.Terminate
     
 End Sub
@@ -366,44 +375,44 @@ Sub ParallelToUTF8()
     Dim c As Integer
     'из каждой строки таблицы будем делать блок из строк в файле
     For i = 1 To cr + 1
-        c = Table1.Cell(i, 1).Range.Words.count
+        c = Table1.cell(i, 1).Range.words.count
         If c > 1 Then
             col = 1
             doMerge = False
             fsT.WriteText ("-----------------------------------------------" & vbCrLf)
             ' первая строка - хакасский текст
-            fsT.WriteText ("KHAK: " & Mid$(Table1.Cell(i, 1).Range.text, 1, Len(Table1.Cell(i, 1).Range.text) - 1) & vbCrLf)
+            fsT.WriteText ("KHAK: " & Mid$(Table1.cell(i, 1).Range.text, 1, Len(Table1.cell(i, 1).Range.text) - 1) & vbCrLf)
             kav = False
             For j = 1 To c - 1
                 ' каждая последующая строка - хакасское слово в исходном виде, потом через | в нормализованном виде
-                ch = Mid(Table1.Cell(i, 1).Range.Words.item(j), 1, 1)
+                ch = Mid(Table1.cell(i, 1).Range.words.item(j), 1, 1)
                 If InStr(punct, ch) = 0 Then
                     If kav = False And j <> 1 Then
                         fsT.WriteText (vbCrLf)
                     End If
                     If ch = ChrW(&HAB) Then
                         kav = True
-                        fsT.WriteText ("KHAK: " & Table1.Cell(i, 1).Range.Words.item(j))
+                        fsT.WriteText ("KHAK: " & Table1.cell(i, 1).Range.words.item(j))
                     Else
                         If kav = True Then
-                            fsT.WriteText (Table1.Cell(i, 1).Range.Words.item(j))
-                            fsT.WriteText ("|" & khParser.Normalize(Table1.Cell(i, 1).Range.Words.item(j)))
+                            fsT.WriteText (Table1.cell(i, 1).Range.words.item(j))
+                            fsT.WriteText ("|" & khParser.Normalize(Table1.cell(i, 1).Range.words.item(j)))
                             kav = False
                         Else
-                            fsT.WriteText ("KHAK: " & Table1.Cell(i, 1).Range.Words.item(j))
-                            fsT.WriteText ("|" & khParser.Normalize(Table1.Cell(i, 1).Range.Words.item(j)))
+                            fsT.WriteText ("KHAK: " & Table1.cell(i, 1).Range.words.item(j))
+                            fsT.WriteText ("|" & khParser.Normalize(Table1.cell(i, 1).Range.words.item(j)))
                         End If
                     End If
                 Else
-                    fsT.WriteText (Table1.Cell(i, 1).Range.Words.item(j))
+                    fsT.WriteText (Table1.cell(i, 1).Range.words.item(j))
                 End If
             Next j
             ' последняя строка - русский текст
-            fsT.WriteText (vbCrLf & "RUS: " & Mid$(Table1.Cell(i, 2).Range.text, 1, Len(Table1.Cell(i, 2).Range.text) - 1) & vbCrLf)
+            fsT.WriteText (vbCrLf & "RUS: " & Mid$(Table1.cell(i, 2).Range.text, 1, Len(Table1.cell(i, 2).Range.text) - 1) & vbCrLf)
         End If
         Debug.Print i
     Next i
-    NameUTF8 = theDoc.Path & "\" & Mid$(theDoc.Name, 1, InStrRev(theDoc.Name, ".")) & "txt"
+    NameUTF8 = theDoc.Path & "\" & Mid$(theDoc.name, 1, InStrRev(theDoc.name, ".")) & "txt"
     fsT.SaveToFile NameUTF8, 2
     fsT.Close
 End Sub

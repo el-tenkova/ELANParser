@@ -1,0 +1,26 @@
+HKCR
+{
+	KhakParser.KhParser.1 = s 'KhParser Class'
+	{
+		CLSID = s '{8E01F725-F6EA-4B08-BE86-7E758B0AEF48}'
+	}
+	KhakParser.KhParser = s 'KhParser Class'
+	{
+		CLSID = s '{8E01F725-F6EA-4B08-BE86-7E758B0AEF48}'
+		CurVer = s 'KhakParser.KhParser.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {8E01F725-F6EA-4B08-BE86-7E758B0AEF48} = s 'KhParser Class'
+		{
+			ProgID = s 'KhakParser.KhParser.1'
+			VersionIndependentProgID = s 'KhakParser.KhParser'
+			ForceRemove 'Programmable'
+			InprocServer32 = s '%MODULE%'
+			{
+			}
+			'TypeLib' = s '{743F8BDE-1839-4C4C-9518-9A3ABFAA1BDF}'
+		}
+	}
+
+}

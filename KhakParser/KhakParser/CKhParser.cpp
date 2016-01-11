@@ -44,8 +44,18 @@ STDMETHODIMP CKhParser::Terminate( long* hRes )
     if (pIXMLHTTPRequest != NULL)
         pIXMLHTTPRequest.Release();
     repl.clear();
-    if (locinfo != 0)
+    if (locinfo != 0) {
         _free_locale(locinfo);
+        locinfo = 0;
+    }
+    homonyms.clear();
+    currHom = -1;
+    cache.clear();
+    sentences.clear();
+    empty.clear();
+    safeArraySize = 0;
+    request = L"/suddenly/?parse=";
+
     return S_OK;
 }
 
@@ -83,7 +93,7 @@ HRESULT CKhParser::DoParse(BSTR word, long* hRes)
     wcscat_s(toPost, wcslen(request) + wcslen(normWord) + 1, request);
     wcscat_s(toPost, wcslen(request) + wcslen(normWord) + 1, normWord);
 
-    *hRes = pIXMLHTTPRequest->open("POST", toPost, false);
+    *hRes = pIXMLHTTPRequest->open("GET", toPost, false);
     if (*hRes != S_OK) {
         delete [] toPost;
         return *hRes;
@@ -95,6 +105,8 @@ HRESULT CKhParser::DoParse(BSTR word, long* hRes)
         return *hRes;
     }
 
+    size_t statuc = pIXMLHTTPRequest->status;
+    statuc++;
     if (pIXMLHTTPRequest->status == 200)
     { 
         fillHomonyms(pIXMLHTTPRequest->responseText);
@@ -214,10 +226,17 @@ HRESULT CKhParser::fillHomonyms(BSTR response)
         wchar_t* affixes = getDetails(wcschr(tmp, L' '), 0xA);
 
         tmp = wcschr(tmp, 0xA);
+        if (tmp == 0)
+            continue;
         tmp = wcschr(tmp, L' ');
+        if (tmp == 0)
+            continue;
         // headword
         wchar_t* headword = getSubstr(tmp, L' ');
-        tmp = wcschr(tmp, 0x201B) + 1;
+        tmp = wcschr(tmp, 0x201B);
+        if (tmp == 0)
+            continue;
+        tmp = tmp + 1;
         // meaning
         wchar_t* meaning = getSubstr(tmp, 0x2019);
         tmp = wcschr(tmp, 0x2019) + 1;
@@ -299,7 +318,7 @@ HRESULT CKhParser::saveResults(void)
 //    _ui64toa_s(1251, locale_name + 1, sizeof(locale_name) - 1, 10);
     std::locale loc = std::locale(std::locale("C"), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>());
     // print words parsed
-    if (dict.length() != 0 ) {
+    if (dict.length() != 0 && cache.size() != 0) {
         std::wofstream outDict(dict, std::wofstream::binary);
         if (outDict.is_open()) {
 //            std::locale loc;
@@ -331,7 +350,7 @@ HRESULT CKhParser::saveResults(void)
         outDict.close();
     }
     // print words not found
-    if (notfound.length() != 0) {
+    if (notfound.length() != 0 && empty.size() != 0) {
         std::wofstream notFound(notfound, std::wofstream::binary);
         if (notFound.is_open()) {
             notFound.imbue(loc);

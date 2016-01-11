@@ -44,7 +44,7 @@ void CKhParser::writeHeader(std::wofstream& ef)
     std::wstring header(L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     header.append(L"<ANNOTATION_DOCUMENT AUTHOR=\"unspecified\" DATE=\"2015-04-09T12:42:10+04:00\" FORMAT=\"2.8\" VERSION=\"2.8\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"http://www.mpi.nl/tools/elan/EAFv2.8.xsd\">\n");
     header.append(L"<HEADER MEDIA_FILE=\"\" TIME_UNITS=\"milliseconds\">\n");
-    header.append(L"<MEDIA_DESCRIPTOR MEDIA_URL=\"\" MIME_TYPE=\"audio/x-wav\"/>\n"); //to avoid Annex reject error
+ //   header.append(L"<MEDIA_DESCRIPTOR MEDIA_URL=\"\" MIME_TYPE=\"audio/x-wav\"/>\n"); //to avoid Annex reject error
     //'<PROPERTY NAME="URN">urn:nl-mpi-tools-elan-eaf:6504c785-9396-4c0d-abc5-c224bfd7eb09</PROPERTY>
     //    '<PROPERTY NAME="lastUsedAnnotationId">49</PROPERTY>
     header.append(L"</HEADER>\n");

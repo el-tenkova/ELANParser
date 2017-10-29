@@ -14,10 +14,19 @@ using namespace MSXML2;
 
 #include "resource.h"       // main symbols
 
+enum reftype
+{
+    rus = 0,
+    lemma,
+    partofspeech,
+};
+
 struct hom
 {
     std::wstring khak;
     std::wstring rus;
+    std::wstring lemma;
+    std::wstring pos;
 };
 
 typedef std::vector<hom> HomVct;
@@ -37,6 +46,11 @@ struct sent
     std::wstring rus_sent; // русское предложение
     std::vector<std::wstring> words; // последовательность слов в предложении
     std::map<std::wstring, std::wstring> keys; // исходное слово : нормализованное слово (ключ в словаре cache)
+    std::wstring informant; // имя участника разговора
+    _ULonglong id; //индекс хакасского предложения
+    _ULonglong firstHomId; // индекс первого омонима (для соотв. русских ref)
+    _ULonglong time1; //начало разговора
+    _ULonglong time2; //конец разговора
 };
 
 typedef std::vector<sent> SentVct;
@@ -49,7 +63,7 @@ class ATL_NO_VTABLE CKhParser :
 public:
     CKhParser():
       pIXMLHTTPRequest(NULL),
-      request(L"/cgi-bin/suddenly.fs?Getparam=getval&parse="),
+      request(L"/suddenly/?parse="),
       locinfo(0),
       safeArraySize(0),
       homonyms(0),
@@ -85,6 +99,7 @@ END_COM_MAP()
     STDMETHOD(Normalize)(BSTR InputWord, /*[in, out] */SAFEARRAY** lpNormalized);
     STDMETHOD(AddKhakSent)(BSTR InputSent, /*[out, retval]*/ long* hRes);
     STDMETHOD(AddRusSent)(BSTR InputSent, /*[out, retval]*/ long* hRes);
+    STDMETHOD(AddKhakSent2)(BSTR Name, BSTR InputSent, /*[out, retval]*/ long* hRes);
     STDMETHOD(SaveToELAN)(BSTR ElanPath, /*[out, retval]*/ long *hRes);
 
 protected:
@@ -96,11 +111,13 @@ protected:
     SentVct sentences;
     std::map<std::wstring, int> empty;
     std::map<short, short> repl;
+    std::map<std::wstring, int> names;
     _locale_t locinfo;
     int safeArraySize;
 
     std::wstring dict;
     std::wstring notfound;
+    std::wstring cur_name; //текущий пользователь при записи слоя
 
     HRESULT normWord(const BSTR& inputWord, BSTR& normWord);
     HRESULT fillHomonyms(BSTR response);
@@ -114,18 +131,21 @@ protected:
     void writeHeader(std::wofstream& ef);
     void writeTail(std::wofstream& ef);
     void writeTimeSlot(std::wofstream& ef, const _ULonglong& idx, const _ULonglong& begin);
-    void writeTierHeader(std::wofstream& ef, const std::wstring& name, const std::wstring& parent);
+    void writeTierHeader(std::wofstream& ef, const std::wstring& name, const std::wstring& type, const std::wstring& parent);
     void writeTierTail(std::wofstream& ef);
     void writeAnno(std::wofstream& ef, const std::wstring& sent, const _ULonglong& idx, const _ULonglong& time1, const _ULonglong& time2);
     void writeRefAnno(std::wofstream& ef, const std::wstring& sent, const _ULonglong& idx, const _ULonglong& refid);
 
     void writeTimes(std::wofstream& ef);
-    _ULonglong writeKhakSent(std::wofstream& ef);
-    _ULonglong writeRusSent(std::wofstream& ef, _ULonglong id);
-    _ULonglong writeWords(std::wofstream& ef, _ULonglong id);
-    _ULonglong writeKhakHoms(std::wofstream& ef, _ULonglong id);
-    _ULonglong writeRusHoms(std::wofstream& ef, _ULonglong id, _ULonglong refid);
-
+    _ULonglong writeKhakSent(std::wofstream& ef, _ULonglong& id);
+    _ULonglong writeRusSent(std::wofstream& ef, _ULonglong& id);
+    _ULonglong writeWords(std::wofstream& ef, _ULonglong& id);
+    _ULonglong writeKhakHoms(std::wofstream& ef, _ULonglong& id);
+    _ULonglong writeRefTier(std::wofstream& ef, _ULonglong& id, _ULonglong& refid, const reftype& type);
+    _ULonglong writeRusHoms(std::wofstream& ef, _ULonglong& id, _ULonglong& refid);
+    _ULonglong writeLemma(std::wofstream& ef, _ULonglong& id, _ULonglong& refid);
+    _ULonglong writePartOfSpeech(std::wofstream& ef, _ULonglong& id, _ULonglong& refid);
+    void appendName(std::wstring& lvlName, std::wstring& refLvlName);
 };
 
 #endif //__KHPARSER_H_

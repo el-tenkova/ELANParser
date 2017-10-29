@@ -28,7 +28,7 @@ STDMETHODIMP CKhParser::Init(int cSafeArr, BSTR www, BSTR dictPath, BSTR notfoun
     repl.insert(std::pair<short, short>(L'y', 0x0443));
     repl.insert(std::pair<short, short>(0xF6, 0x04E7));
     repl.insert(std::pair<short, short>(0xFF, 0x04F1));
-    repl.insert(std::pair<short, short>(0x04B7, 0x04CC)); 
+    repl.insert(std::pair<short, short>(0x04B7, 0x04CC));
 
     char locale_name[32] = "";
     locale_name[0] = '.';
@@ -175,6 +175,44 @@ HRESULT CKhParser::AddKhakSent(BSTR InputSent, long* hRes)
     *hRes = S_OK;
     sent newSent;
     newSent.khak_sent = std::wstring(InputSent);
+    newSent.informant = std::wstring(L"");
+    size_t pos = newSent.khak_sent.find(0x1f);
+    while (pos != std::wstring::npos) {
+        newSent.khak_sent.replace(pos, 1, L"");
+        pos = newSent.khak_sent.find(0x1f);
+    }
+    newSent.size = 0;
+    sentences.push_back(newSent);
+    return S_OK;
+}
+
+HRESULT CKhParser::AddKhakSent2(BSTR Name, BSTR InputSent, long* hRes)
+{
+    *hRes = S_OK;
+    sent newSent;
+    newSent.khak_sent = std::wstring(InputSent);
+    newSent.informant = std::wstring(Name);
+    size_t begin = 0, end = newSent.informant.length();
+    for (std::wstring::iterator it = newSent.informant.begin(); it != newSent.informant.end(); ++it) {
+        if (*it == L' ' || *it == L'\x09')
+            begin++;
+        else
+            break;
+    }
+    for (std::wstring::iterator it = newSent.informant.end() - 1; it != newSent.informant.begin(); --it) {
+        if (*it == L' ' || *it == L'\t')
+            end--;
+        else
+            break;
+    }
+    newSent.informant = newSent.informant.substr(begin, end);
+    if (names.find(newSent.informant) == names.end())
+        names.insert(std::pair<std::wstring, int>(newSent.informant, (int)(names.size() + 1)));
+    size_t pos = newSent.khak_sent.find(0x1f);
+    while (pos != std::wstring::npos) {
+        newSent.khak_sent.replace(pos, 1, L"");
+        pos = newSent.khak_sent.find(0x1f);
+    }
     newSent.size = 0;
     sentences.push_back(newSent);
     return S_OK;
@@ -186,6 +224,11 @@ HRESULT CKhParser::AddRusSent(BSTR InputSent, long* hRes)
     if (sentences.size() > 0) {
         SentVct::iterator it = sentences.end() - 1;
         it->rus_sent = std::wstring(InputSent);
+        size_t pos = it->rus_sent.find(0x1f);
+        while (pos != std::wstring::npos) {
+            it->rus_sent.replace(pos, 1, L"");
+            pos = it->rus_sent.find(0x1f);
+        }
     }
     return S_OK;
 }
@@ -200,7 +243,7 @@ HRESULT CKhParser::normWord( const BSTR& InputWord, BSTR& normWord )
     _wcslwr_s_l(normWord, len + 1, locinfo);
     for (int i = 0; i < len; i++)
     {
-        std::map<short, short>::iterator it = repl.find(InputWord[i]);
+        std::map<short, short>::iterator it = repl.find(normWord[i]);
         if (it != repl.end())
             normWord[i] = it->second;
     }
@@ -228,6 +271,8 @@ HRESULT CKhParser::fillHomonyms(BSTR response)
         tmp = wcschr(tmp, 0xA);
         if (tmp == 0)
             continue;
+        //part of speech
+        wchar_t* pos = getSubstr(tmp, L' ');
         tmp = wcschr(tmp, L' ');
         if (tmp == 0)
             continue;
@@ -252,6 +297,8 @@ HRESULT CKhParser::fillHomonyms(BSTR response)
             homonym.khak = std::wstring(headword);
         homonym.khak.append(affixes);
         homonym.rus = std::wstring(meaning).append(form);
+        homonym.lemma = std::wstring(headword);
+        homonym.pos = std::wstring(pos);
 
         homonyms.push_back(homonym);
         tmp = tmp = wcsstr(tmp, foundStem);

@@ -24,7 +24,8 @@ import "ocidl.idl";
         [id(6), helpstring("method Normalize")] HRESULT Normalize( BSTR InputWord, [in, out] SAFEARRAY( short ) *lpHomonym );
         [id(7), helpstring("method AddKhakSent")] HRESULT AddKhakSent( BSTR InputSent, [out, retval] long *hRes );
         [id(8), helpstring("method AddRusSent")] HRESULT AddRusSent( BSTR InputSent, [out, retval] long *hRes );
-        [id(9), helpstring("method SaveToELAN")] HRESULT SaveToELAN( BSTR ElanPath, [out, retval] long *hRes );
+        [id(9), helpstring("method AddKhakSent2")] HRESULT AddKhakSent2(BSTR Name, BSTR InputSent, [out, retval] long *hRes);
+        [id(10), helpstring("method SaveToELAN")] HRESULT SaveToELAN( BSTR ElanPath, [out, retval] long *hRes );
 
     };
 

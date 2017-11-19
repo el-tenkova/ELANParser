@@ -19,6 +19,8 @@ enum reftype
     rus = 0,
     lemma,
     partofspeech,
+    m_rus,
+    m_eng,
 };
 
 struct hom
@@ -27,6 +29,8 @@ struct hom
     std::wstring rus;
     std::wstring lemma;
     std::wstring pos;
+    std::vector<std::wstring> morphems;
+    std::vector<std::wstring> r_morphems;
 };
 
 typedef std::vector<hom> HomVct;
@@ -34,6 +38,7 @@ typedef std::vector<hom> HomVct;
 struct cacheItem
 {
     int count;
+    int homVctSize; // считаем для каждого омонима число морфем
     HomVct homVct;
 };
 
@@ -119,6 +124,19 @@ protected:
     std::wstring notfound;
     std::wstring cur_name; //текущий пользователь при записи слоя
 
+    std::map<std::wstring, std::wstring> lvlNames;
+    static std::wstring Kh_Sent;
+    static std::wstring Kh_Words;
+    static std::wstring Kh_Homonyms;
+    static std::wstring Kh_Lemma;
+    static std::wstring Kh_PartOfSpeech;
+    static std::wstring Kh_Morphems;
+    static std::wstring Rus_Morphems;
+    static std::wstring Eng_Morphems;
+    static std::wstring Rus_Homonyms;
+    static std::wstring Rus_Sent;
+
+
     HRESULT normWord(const BSTR& inputWord, BSTR& normWord);
     HRESULT fillHomonyms(BSTR response);
     wchar_t* getDetails(const wchar_t* str, wchar_t endCh);
@@ -126,6 +144,8 @@ protected:
     HRESULT saveResults(void);
     void addToSentSize(int value);
     void addWordsToSent(BSTR word, BSTR normWord);
+    void getMorphems(const std::wstring& affixes, std::vector<std::wstring>& morphems, const wchar_t& delim);
+    size_t getMorphemsCount(HomMap::iterator& ct);
 
     // ELAN part
     void writeHeader(std::wofstream& ef);
@@ -145,6 +165,9 @@ protected:
     _ULonglong writeRusHoms(std::wofstream& ef, _ULonglong& id, _ULonglong& refid);
     _ULonglong writeLemma(std::wofstream& ef, _ULonglong& id, _ULonglong& refid);
     _ULonglong writePartOfSpeech(std::wofstream& ef, _ULonglong& id, _ULonglong& refid);
+    _ULonglong writeKhakMorphems(std::wofstream& ef, _ULonglong& id);
+    _ULonglong writeRusMorphems(std::wofstream& ef, _ULonglong& id, _ULonglong& refid);
+    _ULonglong writeEngMorphems(std::wofstream& ef, _ULonglong& id, _ULonglong& refid);
     void appendName(std::wstring& lvlName, std::wstring& refLvlName);
 };
 

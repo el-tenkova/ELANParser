@@ -43,7 +43,14 @@ HRESULT CKhParser::SaveToELAN(BSTR ElanPath, /*[out, retval]*/ long *hRes)
 
             id = writePartOfSpeech(elan, id, refid);
 
-            id = writeRusHoms(elan, id, refid);
+            refid = id;
+            id = writeKhakMorphems(elan, id);
+
+            id = writeRusMorphems(elan, id, refid);
+
+            id = writeEngMorphems(elan, id, refid);
+
+            //id = writeRusHoms(elan, id, refid);
 
             id = writeRusSent(elan, id);
         }
@@ -69,7 +76,8 @@ void CKhParser::writeHeader(std::wofstream& ef)
 void CKhParser::writeTail(std::wofstream& ef)
 {
     std::wstring tail(L"<LINGUISTIC_TYPE GRAPHIC_REFERENCES=\"false\" LINGUISTIC_TYPE_ID=\"default\" TIME_ALIGNABLE=\"true\"/>\n");
-    tail.append(L"<LINGUISTIC_TYPE GRAPHIC_REFERENCES=\"false\" LINGUISTIC_TYPE_ID=\"russwords\" TIME_ALIGNABLE=\"false\"/>\n");
+    tail.append(L"<LINGUISTIC_TYPE GRAPHIC_REFERENCES=\"false\" LINGUISTIC_TYPE_ID=\"ruswords\" TIME_ALIGNABLE=\"false\"/>\n");
+    tail.append(L"<LINGUISTIC_TYPE GRAPHIC_REFERENCES=\"false\" LINGUISTIC_TYPE_ID=\"engwords\" TIME_ALIGNABLE=\"false\"/>\n");
     tail.append(L"<LINGUISTIC_TYPE GRAPHIC_REFERENCES=\"false\" LINGUISTIC_TYPE_ID=\"lemmata\" TIME_ALIGNABLE=\"false\"/>\n");
     tail.append(L"<LINGUISTIC_TYPE GRAPHIC_REFERENCES=\"false\" LINGUISTIC_TYPE_ID=\"partofspeech\" TIME_ALIGNABLE=\"false\"/>\n");
     tail.append(L"<LOCALE COUNTRY_CODE=\"RU\" LANGUAGE_CODE=\"ru\"/>\n");
@@ -179,7 +187,7 @@ _ULonglong CKhParser::writeKhakSent(std::wofstream& ef, _ULonglong& id)
 {
     _ULonglong time1 = 1;
     _ULonglong time2 = 1;
-    std::wstring lvlName = L"KH_Sent";
+    std::wstring lvlName = lvlNames[Kh_Sent];
     appendName(lvlName, std::wstring());
     writeTierHeader(ef, lvlName, L"default", L"");
 
@@ -201,8 +209,8 @@ _ULonglong CKhParser::writeKhakSent(std::wofstream& ef, _ULonglong& id)
 
 _ULonglong CKhParser::writeRusSent(std::wofstream& ef, _ULonglong& id)
 {
-    std::wstring lvlName = L"RUS_Sent";
-    std::wstring khLvlName = L"KH_Sent";
+    std::wstring lvlName = lvlNames[Rus_Sent];
+    std::wstring khLvlName = lvlNames[Kh_Sent];
     appendName(lvlName, khLvlName);
 
     writeTierHeader(ef, lvlName, L"default", khLvlName);
@@ -222,8 +230,8 @@ _ULonglong CKhParser::writeWords(std::wofstream& ef, _ULonglong& id)
 {
     _ULonglong time1 = 1;
     _ULonglong time2 = 1;
-    std::wstring lvlName = L"KH_Words";
-    std::wstring khLvlName = L"KH_Sent";
+    std::wstring lvlName = lvlNames[Kh_Words];
+    std::wstring khLvlName = lvlNames[Kh_Sent];
     appendName(lvlName, khLvlName);
 
     writeTierHeader(ef, lvlName, L"default", khLvlName);
@@ -235,8 +243,10 @@ _ULonglong CKhParser::writeWords(std::wofstream& ef, _ULonglong& id)
             std::vector<std::wstring>::iterator wt = it->words.begin();
             for (; wt != it->words.end(); ++wt) {
                 HomMap::iterator ct = cache.find((it->keys.find(*wt))->second);
-                if (ct != cache.end())
-                    time2 = time1 + ct->second.homVct.size();
+                if (ct != cache.end()) {
+                    //time2 = time1 + ct->second.homVct.size();
+                    time2 = time1 + getMorphemsCount(ct);
+                }
                 else
                     time2 = time1 + 1;
                 writeAnno(ef, (*wt), id, time1, time2);
@@ -253,8 +263,8 @@ _ULonglong CKhParser::writeKhakHoms(std::wofstream& ef, _ULonglong& id)
 {
     _ULonglong time1 = 1;
     _ULonglong time2 = 1;
-    std::wstring lvlName = L"KH_Homonyms";
-    std::wstring khLvlName = L"KH_Words";
+    std::wstring lvlName = lvlNames[Kh_Homonyms];
+    std::wstring khLvlName = lvlNames[Kh_Words];
     appendName(lvlName, khLvlName);
 
     writeTierHeader(ef, lvlName, L"default", khLvlName);
@@ -271,7 +281,8 @@ _ULonglong CKhParser::writeKhakHoms(std::wofstream& ef, _ULonglong& id)
                 if (ct != cache.end()) {
                     HomVct::iterator vt = ct->second.homVct.begin();
                     for (; vt != ct->second.homVct.end(); ++vt) {
-                        time2++;
+                        //time2++;
+                        time2 += vt->morphems.size();
                         writeAnno(ef, vt->khak, id, time1, time2);
                         id++;
                         time1 = time2;
@@ -284,7 +295,49 @@ _ULonglong CKhParser::writeKhakHoms(std::wofstream& ef, _ULonglong& id)
             }
         }
     }
+
     writeTierTail(ef);
+    return id;
+}
+
+_ULonglong CKhParser::writeKhakMorphems(std::wofstream& ef, _ULonglong& id)
+{
+    _ULonglong time1 = 1;
+    _ULonglong time2 = 1;
+    std::wstring lvlName = lvlNames[Kh_Morphems];
+    std::wstring khLvlName = lvlNames[Kh_Words];
+    appendName(lvlName, khLvlName);
+
+    writeTierHeader(ef, lvlName, L"default", khLvlName);
+
+    SentVct::iterator it = sentences.begin();
+    for (; it != sentences.end(); ++it) {
+        if (it->informant == cur_name) {
+            it->firstHomId = id;
+            time1 = it->time1;
+            time2 = time1;
+            std::vector<std::wstring>::iterator wt = it->words.begin();
+            for (; wt != it->words.end(); ++wt) {
+                HomMap::iterator ct = cache.find((it->keys.find(*wt))->second);
+                if (ct != cache.end()) {
+                    HomVct::iterator vt = ct->second.homVct.begin();
+                    for (; vt != ct->second.homVct.end(); ++vt) {
+                        for (auto mit = vt->morphems.begin(); mit != vt->morphems.end(); ++mit) {
+                            time2++;
+                            writeAnno(ef, *(mit), id, time1, time2);
+                            id++;
+                            time1 = time2;
+                        }
+                    }
+                }
+                else {
+                    time1++;
+                    time2 = time1;
+                }
+            }
+        }
+    }
+    writeTierHeader(ef, lvlName, L"default", khLvlName);
     return id;
 }
 
@@ -302,13 +355,21 @@ _ULonglong CKhParser::writeRefTier(std::wofstream& ef, _ULonglong& id, _ULonglon
                     for (; vt != ct->second.homVct.end(); ++vt) {
                         switch (type)
                         {
-                            case rus: writeRefAnno(ef, vt->rus, id, refid); break;
-                            case lemma: writeRefAnno(ef, vt->lemma, id, refid); break;
-                            case partofspeech: writeRefAnno(ef, vt->pos, id, refid); break;
+                            case m_eng:
+                            case m_rus:
+                            {
+                                for (auto mit = vt->r_morphems.begin(); mit != vt->r_morphems.end(); ++mit) {
+                                    writeRefAnno(ef, (*mit), id, refid);
+                                    id++;
+                                    refid++;
+                                }
+                                break;
+                            }
+                            case rus: writeRefAnno(ef, vt->rus, id, refid); id++; refid++; break;
+                            case lemma: writeRefAnno(ef, vt->lemma, id, refid); id++; refid++; break;
+                            case partofspeech: writeRefAnno(ef, vt->pos, id, refid); id++; refid++; break;
                             default: break;
                         }
-                        id++;
-                        refid++;
                     }
                 }
             }
@@ -317,10 +378,38 @@ _ULonglong CKhParser::writeRefTier(std::wofstream& ef, _ULonglong& id, _ULonglon
     return id;
 }
 
+_ULonglong CKhParser::writeRusMorphems(std::wofstream& ef, _ULonglong& id, _ULonglong& refid)
+{
+    std::wstring lvlName = lvlNames[Rus_Morphems];
+    std::wstring khLvlName = lvlNames[Kh_Morphems];
+    appendName(lvlName, khLvlName);
+
+    writeTierHeader(ef, lvlName, L"ruswords", khLvlName);
+
+    id = writeRefTier(ef, id, refid, m_rus);
+
+    writeTierTail(ef);
+    return id;
+}
+
+_ULonglong CKhParser::writeEngMorphems(std::wofstream& ef, _ULonglong& id, _ULonglong& refid)
+{
+    std::wstring lvlName = lvlNames[Eng_Morphems];
+    std::wstring khLvlName = lvlNames[Kh_Morphems];
+    appendName(lvlName, khLvlName);
+
+    writeTierHeader(ef, lvlName, L"engwords", khLvlName);
+
+    id = writeRefTier(ef, id, refid, m_eng);
+
+    writeTierTail(ef);
+    return id;
+}
+
 _ULonglong CKhParser::writeRusHoms(std::wofstream& ef, _ULonglong& id, _ULonglong& refid)
 {
-    std::wstring lvlName = L"Rus_Homonyms";
-    std::wstring khLvlName = L"KH_Homonyms";
+    std::wstring lvlName = lvlNames[Rus_Homonyms];
+    std::wstring khLvlName = lvlNames[Kh_Homonyms];
     appendName(lvlName, khLvlName);
 
     writeTierHeader(ef, lvlName, L"russwords", khLvlName);
@@ -333,8 +422,8 @@ _ULonglong CKhParser::writeRusHoms(std::wofstream& ef, _ULonglong& id, _ULonglon
 
 _ULonglong CKhParser::writeLemma(std::wofstream& ef, _ULonglong& id, _ULonglong& refid)
 {
-    std::wstring lvlName = L"KH_Lemma";
-    std::wstring khLvlName = L"KH_Homonyms";
+    std::wstring lvlName = lvlNames[Kh_Lemma];
+    std::wstring khLvlName = lvlNames[Kh_Homonyms];
     appendName(lvlName, khLvlName);
 
     writeTierHeader(ef, lvlName, L"lemmata", khLvlName);
@@ -347,8 +436,8 @@ _ULonglong CKhParser::writeLemma(std::wofstream& ef, _ULonglong& id, _ULonglong&
 
 _ULonglong CKhParser::writePartOfSpeech(std::wofstream& ef, _ULonglong& id, _ULonglong& refid)
 {
-    std::wstring lvlName = L"KH_PartOfSpeech";
-    std::wstring khLvlName = L"KH_Homonyms";
+    std::wstring lvlName = lvlNames[Kh_PartOfSpeech];
+    std::wstring khLvlName = lvlNames[Kh_Homonyms];
     appendName(lvlName, khLvlName);
 
     writeTierHeader(ef, lvlName, L"partofspeech", khLvlName);

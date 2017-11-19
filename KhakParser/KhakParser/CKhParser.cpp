@@ -4,9 +4,23 @@
 #include <locale.h>
 #include <fstream>
 #include <codecvt>
+#include <sstream>
+#include <algorithm>
+#include <iterator>
 
 #include "KhakParser_i.h"
 #include "CKhParser.h"
+
+std::wstring CKhParser::Kh_Sent = L"KH_Sent";
+std::wstring CKhParser::Kh_Words = L"Kh_Words";
+std::wstring CKhParser::Kh_Homonyms = L"Kh_Homonyms";
+std::wstring CKhParser::Kh_Lemma = L"Kh_Lemma";
+std::wstring CKhParser::Kh_PartOfSpeech = L"Kh_PartOfSpeech";
+std::wstring CKhParser::Kh_Morphems = L"Kh_Morphems";
+std::wstring CKhParser::Rus_Morphems = L"Rus_Morphems";
+std::wstring CKhParser::Eng_Morphems = L"Eng_Morphems";
+std::wstring CKhParser::Rus_Homonyms = L"Rus_Homonyms";
+std::wstring CKhParser::Rus_Sent = L"Rus_Sent";
 
 STDMETHODIMP CKhParser::Init(int cSafeArr, BSTR www, BSTR dictPath, BSTR notfoundPath, long* hRes )
 {
@@ -35,6 +49,15 @@ STDMETHODIMP CKhParser::Init(int cSafeArr, BSTR www, BSTR dictPath, BSTR notfoun
     _ui64toa_s(1251, locale_name + 1, sizeof(locale_name) - 1, 10);
     locinfo = _create_locale(LC_ALL, locale_name);
 
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Sent, L"st"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Words, L"tx"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Homonyms, L"hom"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Lemma, L"lemma"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_PartOfSpeech, L"ps"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Morphems, L"mb"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Rus_Morphems, L"gr"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Eng_Morphems, L"ge"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Rus_Sent, L"rus"));
     return *hRes;
 }
 
@@ -85,7 +108,10 @@ HRESULT CKhParser::DoParse(BSTR word, long* hRes)
         homonyms = it->second.homVct;
         currHom = 0;
         it->second.count++;
-        addToSentSize((int)homonyms.size() - 1);
+        size_t hSize = 0;
+        for (auto it = homonyms.begin(); it != homonyms.end(); ++it)
+            hSize += it->morphems.size();
+        addToSentSize((int)hSize - 1); //homonyms.size() - 1);
         return S_OK;
     }
     wchar_t* toPost = new wchar_t [wcslen(request) + wcslen(normWord) + 1];
@@ -116,7 +142,10 @@ HRESULT CKhParser::DoParse(BSTR word, long* hRes)
             item.homVct = homonyms;
             currHom = 0;
             cache.insert(std::pair<std::wstring, cacheItem>(normWord, item));
-            addToSentSize((int)homonyms.size() - 1);
+            size_t hSize = 0;
+            for (auto it = homonyms.begin(); it != homonyms.end(); ++it)
+                hSize += it->morphems.size();
+            addToSentSize((int)hSize - 1); //homonyms.size() - 1);
         }
         else {
             empty.insert(std::pair<std::wstring, int>(normWord, 1));
@@ -272,7 +301,7 @@ HRESULT CKhParser::fillHomonyms(BSTR response)
         if (tmp == 0)
             continue;
         //part of speech
-        wchar_t* pos = getSubstr(tmp, L' ');
+        wchar_t* pos = getSubstr(tmp + 1, L' ');
         tmp = wcschr(tmp, L' ');
         if (tmp == 0)
             continue;
@@ -295,13 +324,21 @@ HRESULT CKhParser::fillHomonyms(BSTR response)
             homonym.khak = std::wstring(stem);
         else
             homonym.khak = std::wstring(headword);
+        homonym.morphems.push_back(homonym.khak);
+        getMorphems(affixes, homonym.morphems, L'-');
         homonym.khak.append(affixes);
+
         homonym.rus = std::wstring(meaning).append(form);
+
+        homonym.r_morphems.push_back(meaning);
+        getMorphems(form, homonym.r_morphems, L'-');
         homonym.lemma = std::wstring(headword);
         homonym.pos = std::wstring(pos);
 
         homonyms.push_back(homonym);
-        tmp = tmp = wcsstr(tmp, foundStem);
+        homonym.morphems.clear();
+        homonym.r_morphems.clear();
+        tmp = wcsstr(tmp, foundStem);
      }
     return S_OK;
 }
@@ -438,3 +475,32 @@ void CKhParser::addWordsToSent(BSTR word, BSTR normWord)
     }
 }
 
+void CKhParser::getMorphems(const std::wstring& str, std::vector<std::wstring>& morphems, const wchar_t& delim)
+{
+    size_t pos = str.find(delim);
+    if (pos == std::wstring::npos)
+        return;
+    size_t prev = 0;
+    while (pos != std::wstring::npos) {
+        if (pos == 0) {
+            prev = pos + 1;
+            pos = str.find(delim, pos + 1);
+            continue;
+        }
+        morphems.push_back(str.substr(prev, pos - prev));
+        prev = pos + 1;
+        if (pos + 1 > str.length())
+            break;
+        pos = str.find(delim, pos + 1);
+    }
+    morphems.push_back(str.substr(prev));
+}
+
+size_t CKhParser::getMorphemsCount(HomMap::iterator& ct)
+{
+    size_t s = 0;
+    for (auto hit = ct->second.homVct.begin(); hit != ct->second.homVct.end(); ++hit) {
+        s += hit->morphems.size();
+    }
+    return s;
+}

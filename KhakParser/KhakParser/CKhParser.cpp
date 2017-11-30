@@ -20,6 +20,7 @@ std::wstring CKhParser::Kh_Morphems = L"Kh_Morphems";
 std::wstring CKhParser::Rus_Morphems = L"Rus_Morphems";
 std::wstring CKhParser::Eng_Morphems = L"Eng_Morphems";
 std::wstring CKhParser::Rus_Homonyms = L"Rus_Homonyms";
+std::wstring CKhParser::Eng_Homonyms = L"Eng_Homonyms";
 std::wstring CKhParser::Rus_Sent = L"Rus_Sent";
 
 STDMETHODIMP CKhParser::Init(int cSafeArr, BSTR www, BSTR dictPath, BSTR notfoundPath, long* hRes )
@@ -49,15 +50,17 @@ STDMETHODIMP CKhParser::Init(int cSafeArr, BSTR www, BSTR dictPath, BSTR notfoun
     _ui64toa_s(1251, locale_name + 1, sizeof(locale_name) - 1, 10);
     locinfo = _create_locale(LC_ALL, locale_name);
 
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Sent, L"st"));
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Words, L"tx"));
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Homonyms, L"hom"));
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Lemma, L"lemma"));
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_PartOfSpeech, L"ps"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Sent, L"_Transcription-txt-kjh"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Words, L"_Words-txt-kjh"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Homonyms, L"_Morph-txt-kjh"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Lemma, L"_Lemma-txt-kjh"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_PartOfSpeech, L"_POS-txt-en"));
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Morphems, L"mb"));
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Rus_Morphems, L"gr"));
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Eng_Morphems, L"ge"));
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Rus_Sent, L"rus"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Rus_Homonyms, L"_Gloss-txt-rus"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Eng_Homonyms, L"_Gloss-txt-en"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Rus_Sent, L"_Translation-gls-rus"));
     return *hRes;
 }
 

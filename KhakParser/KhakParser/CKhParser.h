@@ -16,7 +16,9 @@ using namespace MSXML2;
 
 enum reftype
 {
-    rus = 0,
+    words = 0,
+    homs,
+    rus,
     lemma,
     partofspeech,
     m_rus,
@@ -106,8 +108,13 @@ END_COM_MAP()
     STDMETHOD(AddRusSent)(BSTR InputSent, /*[out, retval]*/ long* hRes);
     STDMETHOD(AddKhakSent2)(BSTR Name, BSTR InputSent, /*[out, retval]*/ long* hRes);
     STDMETHOD(SaveToELAN)(BSTR ElanPath, /*[out, retval]*/ long *hRes);
+    STDMETHOD(SaveToELANFlex)(BSTR ElanPath, /*[out, retval]*/ long *hRes);
 
 protected:
+    enum stepType {
+        simple = 0,
+        size,
+    };
     IXMLHTTPRequestPtr pIXMLHTTPRequest;
     _bstr_t request;
     std::vector<hom> homonyms;
@@ -134,6 +141,7 @@ protected:
     static std::wstring Rus_Morphems;
     static std::wstring Eng_Morphems;
     static std::wstring Rus_Homonyms;
+    static std::wstring Eng_Homonyms;
     static std::wstring Rus_Sent;
 
 
@@ -151,18 +159,22 @@ protected:
     void writeHeader(std::wofstream& ef);
     void writeTail(std::wofstream& ef);
     void writeTimeSlot(std::wofstream& ef, const _ULonglong& idx, const _ULonglong& begin);
-    void writeTierHeader(std::wofstream& ef, const std::wstring& name, const std::wstring& type, const std::wstring& parent);
+    void writeTierHeader(std::wofstream& ef, const std::wstring& name, const std::wstring& type, const std::wstring& parent, const std::wstring& participant);
     void writeTierTail(std::wofstream& ef);
     void writeAnno(std::wofstream& ef, const std::wstring& sent, const _ULonglong& idx, const _ULonglong& time1, const _ULonglong& time2);
-    void writeRefAnno(std::wofstream& ef, const std::wstring& sent, const _ULonglong& idx, const _ULonglong& refid);
+    void writeRefAnno(std::wofstream& ef, const std::wstring& sent, const _ULonglong& idx, const _ULonglong& refid, const _ULonglong& previous);
 
     void writeTimes(std::wofstream& ef);
-    _ULonglong writeKhakSent(std::wofstream& ef, _ULonglong& id);
+    void writeSentOnlyTimes(std::wofstream& ef);
+    _ULonglong writeKhakSent(std::wofstream& ef, _ULonglong& id, const stepType timeStep);
     _ULonglong writeRusSent(std::wofstream& ef, _ULonglong& id);
     _ULonglong writeWords(std::wofstream& ef, _ULonglong& id);
     _ULonglong writeKhakHoms(std::wofstream& ef, _ULonglong& id);
-    _ULonglong writeRefTier(std::wofstream& ef, _ULonglong& id, _ULonglong& refid, const reftype& type);
+    _ULonglong writeWordsAsRef(std::wofstream& ef, _ULonglong& id, const _ULonglong refid);
+    _ULonglong writeKhakHomsAsRef(std::wofstream& ef, _ULonglong& id, const _ULonglong refid);
+    _ULonglong writeRefTier(std::wofstream& ef, _ULonglong& id, _ULonglong refid, const reftype& type);
     _ULonglong writeRusHoms(std::wofstream& ef, _ULonglong& id, _ULonglong& refid);
+    _ULonglong writeEngHoms(std::wofstream& ef, _ULonglong& id, _ULonglong& refid);
     _ULonglong writeLemma(std::wofstream& ef, _ULonglong& id, _ULonglong& refid);
     _ULonglong writePartOfSpeech(std::wofstream& ef, _ULonglong& id, _ULonglong& refid);
     _ULonglong writeKhakMorphems(std::wofstream& ef, _ULonglong& id);

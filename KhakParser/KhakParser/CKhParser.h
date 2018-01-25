@@ -154,6 +154,7 @@ protected:
     void addWordsToSent(BSTR word, BSTR normWord);
     void getMorphems(const std::wstring& affixes, std::vector<std::wstring>& morphems, const wchar_t& delim);
     size_t getMorphemsCount(HomMap::iterator& ct);
+    wchar_t* removeSymbols(wchar_t* input);
 
     // ELAN part
     void writeHeader(std::wofstream& ef);

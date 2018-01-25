@@ -50,17 +50,17 @@ STDMETHODIMP CKhParser::Init(int cSafeArr, BSTR www, BSTR dictPath, BSTR notfoun
     _ui64toa_s(1251, locale_name + 1, sizeof(locale_name) - 1, 10);
     locinfo = _create_locale(LC_ALL, locale_name);
 
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Sent, L"_Transcription-txt-kjh"));
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Words, L"_Words-txt-kjh"));
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Homonyms, L"_Morph-txt-kjh"));
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Lemma, L"_Lemma-txt-kjh"));
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_PartOfSpeech, L"_POS-txt-en"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Sent, L"Transcription-txt-kjh"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Words, L"Words-txt-kjh"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Homonyms, L"Morph-txt-kjh"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Lemma, L"Lemma-txt-kjh"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_PartOfSpeech, L"POS-txt-en"));
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Morphems, L"mb"));
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Rus_Morphems, L"gr"));
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Eng_Morphems, L"ge"));
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Rus_Homonyms, L"_Gloss-txt-rus"));
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Eng_Homonyms, L"_Gloss-txt-en"));
-    lvlNames.insert(std::pair<std::wstring, std::wstring>(Rus_Sent, L"_Translation-gls-rus"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Rus_Homonyms, L"Gloss-txt-rus"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Eng_Homonyms, L"Gloss-txt-en"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Rus_Sent, L"Translation-gls-rus"));
     return *hRes;
 }
 
@@ -310,9 +310,12 @@ HRESULT CKhParser::fillHomonyms(BSTR response)
             continue;
         // headword
         wchar_t* headword = getSubstr(tmp, L' ');
+        wchar_t* poss = wcsstr(tmp, L"<+poss>");
         tmp = wcschr(tmp, 0x201B);
         if (tmp == 0)
             continue;
+        if (poss != 0 && poss > tmp)
+            poss = 0;
         tmp = tmp + 1;
         // meaning
         wchar_t* meaning = getSubstr(tmp, 0x2019);
@@ -331,11 +334,16 @@ HRESULT CKhParser::fillHomonyms(BSTR response)
         getMorphems(affixes, homonym.morphems, L'-');
         homonym.khak.append(affixes);
 
-        homonym.rus = std::wstring(meaning).append(form);
+        homonym.rus = std::wstring(meaning);
+        if (poss != 0)
+            homonym.rus.append(L".3pos");
+        form = removeSymbols(form);
+        homonym.rus.append(form);
 
         homonym.r_morphems.push_back(meaning);
         getMorphems(form, homonym.r_morphems, L'-');
         homonym.lemma = std::wstring(headword);
+        pos = removeSymbols(pos);
         homonym.pos = std::wstring(pos);
 
         homonyms.push_back(homonym);
@@ -344,6 +352,36 @@ HRESULT CKhParser::fillHomonyms(BSTR response)
         tmp = wcsstr(tmp, foundStem);
      }
     return S_OK;
+}
+
+wchar_t* CKhParser::removeSymbols(wchar_t* input)
+{
+    size_t len = wcslen(input);
+    wchar_t* symbols[][2] = 
+    {
+        {L"\x1d62", L""},
+        {L"\x1d63", L""},
+        {L"\x2090", L""},
+        {L"\x2080", L""},
+        //
+        {L"Ass\x2082", L"Ass2" },
+        { L"i\x2081", L"i1" },
+        {L"Gen\x2081", L"Gen1" },
+        {L"\x2081", L""},
+        {L"\x2082", L""},
+        {L"\x2083", L""},
+    };
+    for (size_t i = 0; i < sizeof(symbols) / sizeof(symbols[0]); i++) {
+        wchar_t* pos = wcsstr(input, symbols[i][0]);
+        while (pos != 0) {
+            size_t delta = wcslen(symbols[i][0]) - wcslen(symbols[i][1]);
+            memcpy(pos, symbols[i][1], wcslen(symbols[i][1]) * sizeof(wchar_t));
+            memcpy(pos + wcslen(symbols[i][1]), pos + wcslen(symbols[i][0]), wcslen(pos + wcslen(symbols[i][1])) * sizeof(wchar_t));
+           /// input[wcslen(input) - 1 - delta] = 0x0;
+            pos = wcsstr(input, symbols[i][0]);
+        }
+    }
+    return input;
 }
 
 wchar_t* CKhParser::getDetails(const wchar_t* str, wchar_t endCh)

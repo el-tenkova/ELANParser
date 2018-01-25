@@ -18,7 +18,8 @@ HRESULT CKhParser::SaveToELAN(BSTR ElanPath, /*[out, retval]*/ long *hRes)
 
         writeHeader(elan);
 
-        writeTimes(elan);
+//        writeTimes(elan);
+        writeSentOnlyTimes(elan);
 
         _ULonglong id = 0;
         if (names.size() == 0)
@@ -31,7 +32,34 @@ HRESULT CKhParser::SaveToELAN(BSTR ElanPath, /*[out, retval]*/ long *hRes)
                     break;
                 }
             }
-            id = writeKhakSent(elan, id, size);
+            _ULonglong refid = id;
+
+            id = writeKhakSent(elan, id, simple);
+
+            _ULonglong refidWords = id;
+
+            id = writeWordsAsRef(elan, id, refid);
+
+            id = writeKhakHomsAsRef(elan, id, refidWords);
+
+            id = writeLemma(elan, id, refidWords);
+
+            id = writePartOfSpeech(elan, id, refidWords);
+
+            /*            refid = id;
+            id = writeKhakMorphems(elan, id); */
+
+            //            id = writeRusMorphems(elan, id, refidWords);
+
+            //            id = writeEngMorphems(elan, id, refid);
+
+            id = writeRusHoms(elan, id, refid);
+
+//            id = writeEngHoms(elan, id, refid);
+
+            id = writeRusSent(elan, id);
+
+/*            id = writeKhakSent(elan, id, size);
 
             id = writeWords(elan, id);
 
@@ -52,7 +80,7 @@ HRESULT CKhParser::SaveToELAN(BSTR ElanPath, /*[out, retval]*/ long *hRes)
 
             //id = writeRusHoms(elan, id, refid);
 
-            id = writeRusSent(elan, id);
+            id = writeRusSent(elan, id); */
         }
         writeTail(elan);
 
@@ -107,7 +135,7 @@ HRESULT CKhParser::SaveToELANFlex(BSTR ElanPath, /*[out, retval]*/ long *hRes)
 
             id = writeRusHoms(elan, id, refid);
 
-            id = writeEngHoms(elan, id, refid);
+  //          id = writeEngHoms(elan, id, refid);
 
             id = writeRusSent(elan, id);
         }
@@ -240,7 +268,9 @@ void CKhParser::writeSentOnlyTimes(std::wofstream& ef)
     ef.write(h.c_str(), h.length());
     for (; it != sentences.end(); ++it) {
         writeTimeSlot(ef, idx, begin);
+        idx += 1;
         begin += 5000;
+        writeTimeSlot(ef, idx, begin);
         idx += 1;
     }
     // временно
@@ -304,7 +334,7 @@ _ULonglong CKhParser::writeKhakSent(std::wofstream& ef, _ULonglong& id, const st
             it->time1 = time1;
             it->time2 = time2;
         }
-        time1 = time2;
+        time1 = time2 + 1;
     }
     writeTierTail(ef);
     return id;
@@ -627,9 +657,9 @@ void CKhParser::appendName(std::wstring& lvlName, std::wstring& refLvlName)
             refLvlName.append(L"@");
             refLvlName.append(cur_name);
         } */
-        lvlName = cur_name + lvlName;
+        lvlName = cur_name + std::wstring(L"_") + lvlName;
         if (refLvlName.length() != 0) {
-            refLvlName = cur_name + refLvlName;
+            refLvlName = cur_name + std::wstring(L"_") + refLvlName;
         }
     }
 }

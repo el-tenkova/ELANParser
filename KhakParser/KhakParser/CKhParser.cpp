@@ -321,6 +321,8 @@ HRESULT CKhParser::fillHomonyms(BSTR response)
         wchar_t* meaning = getSubstr(tmp, 0x2019);
         tmp = wcschr(tmp, 0x2019) + 1;
         wchar_t* stem = getSubstr(tmp, 0xA);
+        if (stem[0] >= L'0' && stem[0] <= L'9')
+            stem[0] = 0x0;
         if (stem[0] != 0x0) {
             for (i = (int)wcslen(stem) - 1; i >= 0; i--)
                 if (stem[i] == L' ')

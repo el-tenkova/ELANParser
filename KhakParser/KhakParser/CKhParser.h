@@ -1,18 +1,20 @@
 
-#ifndef __KHPARSER_H_
-#define __KHPARSER_H_
+#ifndef __KHPARSERPURE_H_
+#define __KHPARSERPURE_H_
 
-#include <atlcom.h>
 #include <locale.h>
-
-#import "msxml6.dll"
-using namespace MSXML2;
 
 #include <string>
 #include <vector>
 #include <map>
 
 #include "resource.h"       // main symbols
+
+#ifdef _USE_MSXML2
+#include "CKhHttp.h"
+#else
+#include "CKhHttpL.h"
+#endif
 
 enum reftype
 {
@@ -62,17 +64,13 @@ struct sent
 
 typedef std::vector<sent> SentVct;
 
-class ATL_NO_VTABLE CKhParser : 
-    public ATL::CComObjectRootEx<ATL::CComSingleThreadModel>,
-    public ATL::CComCoClass<CKhParser, &CLSID_KhParser>,
-    public ATL::IDispatchImpl<IKhParser, &IID_IKhParser, &LIBID_KhakParserLib>
+class CKhParser
 {
 public:
     CKhParser():
       pIXMLHTTPRequest(NULL),
       request(L"/suddenly/?parse="),
       locinfo(0),
-      safeArraySize(0),
       homonyms(0),
       currHom(-1),
       dict(L""),
@@ -89,34 +87,26 @@ n тус ‛напротив’ \n\
     {
     }
 
-DECLARE_REGISTRY_RESOURCEID(IDR_KHAKPARSER)
+    long Init(const std::wstring& www, const std::wstring& dict, const std::wstring& notfound);
+    long Terminate(void);
+    long DoParse(const std::wstring& InputWord);
+    long AddKhakSent(const std::wstring& InputSent);
+    long AddRusSent(const std::wstring& InputSent);
+    long AddKhakSent2(const std::wstring& Name, const std::wstring& InputSent);
+    long SaveToELAN(const std::wstring& ElanPath);
+    long SaveToELANFlex(const std::wstring& ElanPath);
+    int GetHomonymNum(void);
+    long GetNextHomonym(std::wstring& hom);
 
-DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-BEGIN_COM_MAP(CKhParser)
-    COM_INTERFACE_ENTRY(IKhParser)
-    COM_INTERFACE_ENTRY(IDispatch)
-END_COM_MAP()
-
-    STDMETHOD(Init)(int cSafeArr, BSTR www, BSTR dict, BSTR notfound, /*[out, retval]*/ long* hRes);
-    STDMETHOD(Terminate)(/*[out, retval]*/ long* hRes);
-    STDMETHOD(DoParse)(BSTR InputWord, /*[out, retval] */long* hRes);
-    STDMETHOD(GetHomonymNum)(/*[out, retval]*/ int* cNumHom);
-    STDMETHOD(GetNextHomonym)(/*[in, out] */SAFEARRAY** lpHomonym);
-    STDMETHOD(Normalize)(BSTR InputWord, /*[in, out] */SAFEARRAY** lpNormalized);
-    STDMETHOD(AddKhakSent)(BSTR InputSent, /*[out, retval]*/ long* hRes);
-    STDMETHOD(AddRusSent)(BSTR InputSent, /*[out, retval]*/ long* hRes);
-    STDMETHOD(AddKhakSent2)(BSTR Name, BSTR InputSent, /*[out, retval]*/ long* hRes);
-    STDMETHOD(SaveToELAN)(BSTR ElanPath, /*[out, retval]*/ long *hRes);
-    STDMETHOD(SaveToELANFlex)(BSTR ElanPath, /*[out, retval]*/ long *hRes);
 
 protected:
     enum stepType {
         simple = 0,
         size,
     };
-    IXMLHTTPRequestPtr pIXMLHTTPRequest;
-    _bstr_t request;
+    CKhHttpWrapper* pIXMLHTTPRequest;
+
+    std::wstring request;
     std::vector<hom> homonyms;
     int currHom;
     HomMap cache;
@@ -125,7 +115,6 @@ protected:
     std::map<short, short> repl;
     std::map<std::wstring, int> names;
     _locale_t locinfo;
-    int safeArraySize;
 
     std::wstring dict;
     std::wstring notfound;
@@ -144,14 +133,13 @@ protected:
     static std::wstring Eng_Homonyms;
     static std::wstring Rus_Sent;
 
-
-    HRESULT normWord(const BSTR& inputWord, BSTR& normWord);
-    HRESULT fillHomonyms(BSTR response);
+    long normWord(const std::wstring& inputWord, std::wstring& normWord);
+    long fillHomonyms(const wchar_t* response);
     wchar_t* getDetails(const wchar_t* str, wchar_t endCh);
     wchar_t* getSubstr(const wchar_t* str, wchar_t endCh);
     HRESULT saveResults(void);
     void addToSentSize(int value);
-    void addWordsToSent(BSTR word, BSTR normWord);
+    void addWordsToSent(const std::wstring& word, const std::wstring& normWord);
     void getMorphems(const std::wstring& affixes, std::vector<std::wstring>& morphems, const wchar_t& delim);
     size_t getMorphemsCount(HomMap::iterator& ct);
     wchar_t* removeSymbols(wchar_t* input);
@@ -184,4 +172,4 @@ protected:
     void appendName(std::wstring& lvlName, std::wstring& refLvlName);
 };
 
-#endif //__KHPARSER_H_
+#endif //__KHPARSERPURE_H_

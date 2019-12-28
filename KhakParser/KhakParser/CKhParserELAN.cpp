@@ -8,9 +8,9 @@
 #include "KhakParser_i.h"
 #include "CKhParser.h"
 
-HRESULT CKhParser::SaveToELAN(BSTR ElanPath, /*[out, retval]*/ long *hRes)
+long CKhParser::SaveToELAN(const std::wstring& ElanPath)
 {
-    *hRes = S_OK;
+    long res = 0;
     std::locale loc = std::locale(std::locale("C"), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>());
     std::wofstream elan(ElanPath, std::wofstream::binary);
     if (elan.is_open()) {
@@ -86,12 +86,12 @@ HRESULT CKhParser::SaveToELAN(BSTR ElanPath, /*[out, retval]*/ long *hRes)
 
         elan.close();
     }
-    return S_OK;
+    return res;
 }
 
-HRESULT CKhParser::SaveToELANFlex(BSTR ElanPath, /*[out, retval]*/ long *hRes)
+long CKhParser::SaveToELANFlex(const std::wstring& ElanPath)
 {
-    *hRes = S_OK;
+    long res = 0;
     std::locale loc = std::locale(std::locale("C"), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>());
     std::wofstream elan(ElanPath, std::wofstream::binary);
     if (elan.is_open()) {
@@ -143,7 +143,7 @@ HRESULT CKhParser::SaveToELANFlex(BSTR ElanPath, /*[out, retval]*/ long *hRes)
 
         elan.close();
     }
-    return S_OK;
+    return res;
 }
 
 void CKhParser::writeHeader(std::wofstream& ef)

@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <iterator>
 
-#include "KhakParser_i.h"
 #include "CKhParser.h"
 
 std::wstring CKhParser::Kh_Sent = L"KH_Sent";
@@ -23,15 +22,15 @@ std::wstring CKhParser::Rus_Homonyms = L"Rus_Homonyms";
 std::wstring CKhParser::Eng_Homonyms = L"Eng_Homonyms";
 std::wstring CKhParser::Rus_Sent = L"Rus_Sent";
 
-STDMETHODIMP CKhParser::Init(int cSafeArr, BSTR www, BSTR dictPath, BSTR notfoundPath, long* hRes )
+long CKhParser::Init(const std::wstring& www, const std::wstring& dictPath, const std::wstring& notfoundPath)
 {
-    Terminate( hRes );
+    Terminate();
     dict = std::wstring(dictPath);
     notfound = std::wstring(notfoundPath);
     //"http://khakas.altaica.ru"
     request = www + request;
-    safeArraySize = cSafeArr;
-    *hRes = pIXMLHTTPRequest.CreateInstance("Msxml2.ServerXMLHTTP");
+    long hRes = 0;
+    pIXMLHTTPRequest = new CKhHttpWrapper(&hRes, "khakas.altaica.ru");
     
     repl.insert(std::pair<short, short>(L'a', 0x0430));
     repl.insert(std::pair<short, short>(L'c', 0x0441));
@@ -61,14 +60,13 @@ STDMETHODIMP CKhParser::Init(int cSafeArr, BSTR www, BSTR dictPath, BSTR notfoun
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Rus_Homonyms, L"Gloss-txt-rus"));
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Eng_Homonyms, L"Gloss-txt-en"));
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Rus_Sent, L"Translation-gls-rus"));
-    return *hRes;
+    return hRes;
 }
 
-STDMETHODIMP CKhParser::Terminate( long* hRes )
+long CKhParser::Terminate(void)
 {
     saveResults();
-    if (pIXMLHTTPRequest != NULL)
-        pIXMLHTTPRequest.Release();
+    delete pIXMLHTTPRequest;
     repl.clear();
     if (locinfo != 0) {
         _free_locale(locinfo);
@@ -79,20 +77,19 @@ STDMETHODIMP CKhParser::Terminate( long* hRes )
     cache.clear();
     sentences.clear();
     empty.clear();
-    safeArraySize = 0;
     request = L"/suddenly/?parse=";
 
-    return S_OK;
+    return 0;
 }
 
-HRESULT CKhParser::DoParse(BSTR word, long* hRes)
+long CKhParser::DoParse(const std::wstring& word)
 {
-    if (word == NULL)
-        return S_OK;
+    if (word.empty())
+        return 0;
 
-    *hRes = S_OK;
+    long hRes = 0;
 
-    BSTR normWord = NULL;
+    std::wstring normWord;
     this->normWord(word, normWord);
     addWordsToSent(word, normWord);
     addToSentSize(1);
@@ -103,7 +100,7 @@ HRESULT CKhParser::DoParse(BSTR word, long* hRes)
         currHom = -1;
         eit->second++;
     //    addToSentSize(1);
-        return S_OK;
+        return 0;
     }
     HomMap::iterator it = cache.find(normWord);
 
@@ -115,30 +112,24 @@ HRESULT CKhParser::DoParse(BSTR word, long* hRes)
         for (auto it = homonyms.begin(); it != homonyms.end(); ++it)
             hSize += it->morphems.size();
         addToSentSize((int)hSize - 1); //homonyms.size() - 1);
-        return S_OK;
-    }
-    wchar_t* toPost = new wchar_t [wcslen(request) + wcslen(normWord) + 1];
-    memset(toPost, 0,( wcslen(request) + wcslen(normWord) + 1) * sizeof(wchar_t));
-    wcscat_s(toPost, wcslen(request) + wcslen(normWord) + 1, request);
-    wcscat_s(toPost, wcslen(request) + wcslen(normWord) + 1, normWord);
-
-    *hRes = pIXMLHTTPRequest->open("GET", toPost, false);
-    if (*hRes != S_OK) {
-        delete [] toPost;
-        return *hRes;
+        return 0;
     }
 
-    *hRes = pIXMLHTTPRequest->send();
-    if (*hRes != S_OK) {
-        delete [] toPost;
-        return *hRes;
-    }
+    std::wstring toPost;
+    toPost.append(request);
+    toPost.append(normWord);
+    hRes = pIXMLHTTPRequest->Open(toPost.c_str());
+    if (hRes != 0)
+        return hRes;
 
-    size_t statuc = pIXMLHTTPRequest->status;
-    statuc++;
-    if (pIXMLHTTPRequest->status == 200)
+    hRes = pIXMLHTTPRequest->Send();
+    if (hRes != 0)
+        return hRes;
+
+    size_t status= pIXMLHTTPRequest->Status();
+    if (pIXMLHTTPRequest->Status() == 200)
     { 
-        fillHomonyms(pIXMLHTTPRequest->responseText);
+        fillHomonyms(pIXMLHTTPRequest->ResponseText());
         if (homonyms.size() > 0) {
             cacheItem item;
             item.count = 1;
@@ -155,56 +146,29 @@ HRESULT CKhParser::DoParse(BSTR word, long* hRes)
 //            addToSentSize(1);
         }
     } 
-    delete [] toPost;
-    return *hRes;
+    return hRes;
 }
 
-HRESULT CKhParser::GetHomonymNum( int* cNumHom )
+int CKhParser::GetHomonymNum(void)
 {
-    *cNumHom = (int)homonyms.size();
-    return S_OK;
+    return ((int)homonyms.size());
 }
 
-HRESULT CKhParser::GetNextHomonym( SAFEARRAY** lpHomonym )
+long CKhParser::GetNextHomonym(std::wstring& hom)
 {
     if (currHom == -1)
-        return S_OK;
-    std::wstring str;
+        return 0;
     if (currHom < homonyms.size())
-        str = homonyms[currHom].khak;
+        hom = homonyms[currHom].khak;
     else
-        str = homonyms[currHom % homonyms.size()].rus;
-
-    long idx, len, start;
-    len = (long)str.length();
-    SafeArrayLock(*lpHomonym);
-
-    SafeArrayGetUBound(*lpHomonym, 1, &len);
-    SafeArrayGetLBound(*lpHomonym, 1, &start);
-    short asterisk = L'*';
-    for (idx = start; idx < len; idx ++) {
-        if (idx == str.length()) {
-//        if (str[idx] == 0x0) {
-            SafeArrayPutElement(*lpHomonym, &idx, &asterisk);
-            break;
-        }
-        SafeArrayPutElement(*lpHomonym, &idx, &str[ idx ]);
-    }
-    SafeArrayUnlock(*lpHomonym);
+        hom = homonyms[currHom % homonyms.size()].rus;
 
     currHom++;
-
-    return S_OK;
+    return 0;
 }
 
-HRESULT CKhParser::Normalize( BSTR InputWord, SAFEARRAY** lpHomonym )
+long CKhParser::AddKhakSent(const std::wstring& InputSent)
 {
-    return S_OK;
-}
-
-HRESULT CKhParser::AddKhakSent(BSTR InputSent, long* hRes)
-{
-    *hRes = S_OK;
     sent newSent;
     newSent.khak_sent = std::wstring(InputSent);
     newSent.informant = std::wstring(L"");
@@ -215,12 +179,11 @@ HRESULT CKhParser::AddKhakSent(BSTR InputSent, long* hRes)
     }
     newSent.size = 0;
     sentences.push_back(newSent);
-    return S_OK;
+    return 0;
 }
 
-HRESULT CKhParser::AddKhakSent2(BSTR Name, BSTR InputSent, long* hRes)
+long CKhParser::AddKhakSent2(const std::wstring& Name, const std::wstring& InputSent)
 {
-    *hRes = S_OK;
     sent newSent;
     newSent.khak_sent = std::wstring(InputSent);
     newSent.informant = std::wstring(Name);
@@ -247,12 +210,11 @@ HRESULT CKhParser::AddKhakSent2(BSTR Name, BSTR InputSent, long* hRes)
     }
     newSent.size = 0;
     sentences.push_back(newSent);
-    return S_OK;
+    return 0;
 }
 
-HRESULT CKhParser::AddRusSent(BSTR InputSent, long* hRes)
+long CKhParser::AddRusSent(const std::wstring& InputSent)
 {
-    *hRes = S_OK;
     if (sentences.size() > 0) {
         SentVct::iterator it = sentences.end() - 1;
         it->rus_sent = std::wstring(InputSent);
@@ -262,12 +224,12 @@ HRESULT CKhParser::AddRusSent(BSTR InputSent, long* hRes)
             pos = it->rus_sent.find(0x1f);
         }
     }
-    return S_OK;
+    return 0;
 }
 
-HRESULT CKhParser::normWord( const BSTR& InputWord, BSTR& normWord )
+long CKhParser::normWord(const std::wstring& InputWord, std::wstring& normWord )
 {
-    size_t len = wcslen(InputWord);
+    size_t len = InputWord.length();
     normWord = new wchar_t [len + 1];
     normWord[0] = 0x0;
     wcscat_s(normWord, len + 1, InputWord);
@@ -282,12 +244,15 @@ HRESULT CKhParser::normWord( const BSTR& InputWord, BSTR& normWord )
     for (int i = (int)wcslen(normWord) - 1; i >= 0; i--)
         if (normWord[i] == L' ')
             normWord[i] = 0x0;
-    return S_OK;
+    return 0;
 }
 
-HRESULT CKhParser::fillHomonyms(BSTR response)
+long CKhParser::fillHomonyms(const std::wstring& response)
 {
-    wchar_t* str(response);
+    std::wstring tmpResp(response);
+    wchar_t* str = new wchar_t [wcslen(response) + 1];
+    str[0] = 0;
+    wcscat(str, response);
     int i = 0;
     const wchar_t* foundStem = L"FOUND STEM:";
     homonyms.clear();
@@ -353,6 +318,7 @@ HRESULT CKhParser::fillHomonyms(BSTR response)
         homonym.r_morphems.clear();
         tmp = wcsstr(tmp, foundStem);
      }
+    delete [] str;
     return S_OK;
 }
 
@@ -506,7 +472,7 @@ void CKhParser::addToSentSize(int value)
     }
 }
 
-void CKhParser::addWordsToSent(BSTR word, BSTR normWord)
+void CKhParser::addWordsToSent(const std::wstring& word, const std::wstring& normWord)
 {
     if (sentences.size() > 0) {
         SentVct::iterator it = sentences.end() - 1;

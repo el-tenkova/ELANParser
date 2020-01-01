@@ -5,8 +5,12 @@
 #include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
-//#define RUS_LOCALE "ru_RU.UTF-8"
-#define RUS_LOCALE "Russian"
+
+#ifdef _WINDOWS
+    #define RUS_LOCALE "Russian"
+#else
+    #define RUS_LOCALE "ru_RU.UTF-8"
+#endif
 
 class CKhHttpWrapper
 {

@@ -1,12 +1,14 @@
 ﻿// CKhParser.cpp : Implementation of CKhParser
-
-#include "stdafx.h"
+#ifdef _WINDOWS
+    #include "stdafx.h"
+#endif
 #include <locale.h>
 #include <fstream>
 #include <codecvt>
 #include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <functional>
 
 #include "CKhParser.h"
 
@@ -22,11 +24,11 @@ std::wstring CKhParser::Rus_Homonyms = L"Rus_Homonyms";
 std::wstring CKhParser::Eng_Homonyms = L"Eng_Homonyms";
 std::wstring CKhParser::Rus_Sent = L"Rus_Sent";
 
-long CKhParser::Init(const std::wstring& www, const std::wstring& dictPath, const std::wstring& notfoundPath)
+long CKhParser::Init(const std::wstring& www, const std::string& dictPath, const std::string& notfoundPath)
 {
     Terminate();
-    dict = std::wstring(dictPath);
-    notfound = std::wstring(notfoundPath);
+    dict = std::string(dictPath);
+    notfound = std::string(notfoundPath);
     //"http://khakas.altaica.ru"
     request = www + request;
     long hRes = 0;
@@ -44,11 +46,12 @@ long CKhParser::Init(const std::wstring& www, const std::wstring& dictPath, cons
     repl.insert(std::pair<short, short>(0xFF, 0x04F1));
     repl.insert(std::pair<short, short>(0x04B7, 0x04CC));
 
+#ifdef _WINDOWS
     char locale_name[32] = "";
     locale_name[0] = '.';
     _ui64toa_s(1251, locale_name + 1, sizeof(locale_name) - 1, 10);
     locinfo = _create_locale(LC_ALL, locale_name);
-
+#endif
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Sent, L"Transcription-txt-kjh"));
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Words, L"Words-txt-kjh"));
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Homonyms, L"Morph-txt-kjh"));
@@ -68,10 +71,12 @@ long CKhParser::Terminate(void)
     saveResults();
     delete pIXMLHTTPRequest;
     repl.clear();
+#ifdef _WINDOWS
     if (locinfo != 0) {
         _free_locale(locinfo);
         locinfo = 0;
     }
+#endif
     homonyms.clear();
     currHom = -1;
     cache.clear();
@@ -230,18 +235,21 @@ long CKhParser::AddRusSent(const std::wstring& InputSent)
 long CKhParser::normWord(const std::wstring& InputWord, std::wstring& normWord )
 {
     size_t len = InputWord.length();
-    normWord = new wchar_t [len + 1];
-    normWord[0] = 0x0;
-    wcscat_s(normWord, len + 1, InputWord);
-
-    _wcslwr_s_l(normWord, len + 1, locinfo);
+//    normWord = new wchar_t [len + 1];
+//    normWord[0] = 0x0;
+//    wcscat_s(normWord, len + 1, InputWord);
+    normWord.clear();
+    normWord.append(InputWord);
+    std::transform(normWord.begin(), normWord.end(), normWord.begin(),
+        std::bind2nd(std::ptr_fun(&std::tolower<wchar_t>), russian));
+//    _wcslwr_s_l(normWord, len + 1, locinfo);
     for (int i = 0; i < len; i++)
     {
         std::map<short, short>::iterator it = repl.find(normWord[i]);
         if (it != repl.end())
             normWord[i] = it->second;
     }
-    for (int i = (int)wcslen(normWord) - 1; i >= 0; i--)
+    for (int i = (int)normWord.length() - 1; i >= 0; i--)
         if (normWord[i] == L' ')
             normWord[i] = 0x0;
     return 0;
@@ -250,9 +258,9 @@ long CKhParser::normWord(const std::wstring& InputWord, std::wstring& normWord )
 long CKhParser::fillHomonyms(const std::wstring& response)
 {
     std::wstring tmpResp(response);
-    wchar_t* str = new wchar_t [wcslen(response) + 1];
+    wchar_t* str = new wchar_t [response.length() + 1];
     str[0] = 0;
-    wcscat(str, response);
+    wcscat(str, response.c_str());
     int i = 0;
     const wchar_t* foundStem = L"FOUND STEM:";
     homonyms.clear();
@@ -319,13 +327,13 @@ long CKhParser::fillHomonyms(const std::wstring& response)
         tmp = wcsstr(tmp, foundStem);
      }
     delete [] str;
-    return S_OK;
+    return 0;
 }
 
 wchar_t* CKhParser::removeSymbols(wchar_t* input)
 {
     size_t len = wcslen(input);
-    wchar_t* symbols[][2] = 
+    const wchar_t* symbols[][2] = 
     {
         {L"\x1d62", L""},
         {L"\x1d63", L""},
@@ -352,7 +360,7 @@ wchar_t* CKhParser::removeSymbols(wchar_t* input)
     return input;
 }
 
-wchar_t* CKhParser::getDetails(const wchar_t* str, wchar_t endCh)
+wchar_t* CKhParser::getDetails(const std::wstring& str, wchar_t endCh)
 {
     wchar_t* aff = 0;
     int len = 0;
@@ -404,29 +412,32 @@ wchar_t* CKhParser::getSubstr(const wchar_t* str, wchar_t endCh)
     return headword;
 }
 
-HRESULT CKhParser::saveResults(void)
+long CKhParser::saveResults(void)
 {
 //    char locale_name[32] = "";
 //    locale_name[0] = '.';
 //    _ui64toa_s(1251, locale_name + 1, sizeof(locale_name) - 1, 10);
-    std::locale loc = std::locale(std::locale("C"), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>());
+//    std::locale loc = std::locale(std::locale("C"), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>());
     // print words parsed
     if (dict.length() != 0 && cache.size() != 0) {
         std::wofstream outDict(dict, std::wofstream::binary);
         if (outDict.is_open()) {
 //            std::locale loc;
 //            loc = std::locale("ru_RU.utf8");
-            outDict.imbue(loc);
+            outDict.imbue(russian);
 
 //            outDict.imbue(loc);//locale_name));
             HomMap::iterator it = cache.begin();
             for (; it != cache.end(); ++it) {
                 outDict.write(it->first.c_str(), it->first.length());// * sizeof(wchar_t));
                 outDict.write(L":\t", wcslen(L":\t"));// * sizeof(wchar_t));
-                wchar_t count[10] = L"";
-                _itow_s(it->second.count, count, 10, 10);
+                //int n = it->second.count;
+                std::wstring nstr = std::to_wstring(it->second.count);
+                outDict.write(nstr.c_str(), nstr.length());
+                //wchar_t count[10] = L"";
+                //_itow_s(it->second.count, count, 10, 10);
 //                wsprintf((LPSTR)count, (LPCSTR)L"%d", it->second.count);
-                outDict.write(count, wcslen(count));// * sizeof(wchar_t));// << L": \t" << it->second.count << L"\t";
+                //outDict.write(count, wcslen(count));// * sizeof(wchar_t));// << L": \t" << it->second.count << L"\t";
                 outDict.write(L":\t", wcslen(L":\t"));// * sizeof(wchar_t));
                 HomVct::iterator vt = it->second.homVct.begin();
                 for (; vt != it->second.homVct.end(); ++vt) {
@@ -446,22 +457,25 @@ HRESULT CKhParser::saveResults(void)
     if (notfound.length() != 0 && empty.size() != 0) {
         std::wofstream notFound(notfound, std::wofstream::binary);
         if (notFound.is_open()) {
-            notFound.imbue(loc);
+            notFound.imbue(russian);
             std::map<std::wstring, int>::iterator et = empty.begin();
             for (; et != empty.end(); ++et) {
                 notFound.write(et->first.c_str(), et->first.length());
                 notFound.write(L" : ", wcslen(L" : "));// * sizeof(wchar_t));
-                wchar_t count[10] = L"";
-                _itow_s(et->second, count, 10, 10);
+                std::wstring nstr = std::to_wstring(et->second);
+                notFound.write(nstr.c_str(), nstr.length());
+//                notFound.write(std::endl);
+                //wchar_t count[10] = L"";
+                //_itow_s(et->second, count, 10, 10);
 //                wsprintf((LPSTR)count, (LPCSTR)L"%d", et->second);
-                notFound.write(count, wcslen(count));// * sizeof(wchar_t));// << L": \t" << it->second.count << L"\t";
+                //notFound.write(count, wcslen(count));// * sizeof(wchar_t));// << L": \t" << it->second.count << L"\t";
                 notFound.write(L"\n", wcslen(L"\n"));// * sizeof(wchar_t));
 //                notFound << et->first << L" : " << et->second << L"\n";
             }
             notFound.close();
         }
     }
-    return S_OK;
+    return 0;
 }
 
 void CKhParser::addToSentSize(int value)

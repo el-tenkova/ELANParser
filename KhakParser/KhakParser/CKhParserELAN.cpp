@@ -1,27 +1,28 @@
-// CKhParserELAN.cpp : Implementation of ELAN's part
-
-#include "stdafx.h"
+#ifdef _WINDOWS
+    #include "stdafx.h"
+#endif
 #include <locale.h>
 #include <fstream>
 #include <codecvt>
 
-#include "KhakParser_i.h"
+#ifdef _WINDOWS
+    #include "KhakParser_i.h"
+#endif
 #include "CKhParser.h"
 
-long CKhParser::SaveToELAN(const std::wstring& ElanPath)
+long CKhParser::SaveToELAN(const std::string& ElanPath)
 {
     long res = 0;
-    std::locale loc = std::locale(std::locale("C"), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>());
     std::wofstream elan(ElanPath, std::wofstream::binary);
     if (elan.is_open()) {
-        elan.imbue(loc);
+        elan.imbue(russian);
 
         writeHeader(elan);
 
 //        writeTimes(elan);
         writeSentOnlyTimes(elan);
 
-        _ULonglong id = 0;
+        unsigned long long id = 0;
         if (names.size() == 0)
             names.insert(std::pair<std::wstring, int>(std::wstring(L""), 1));
         for (size_t i = 1; i <= names.size(); i++) {
@@ -32,11 +33,11 @@ long CKhParser::SaveToELAN(const std::wstring& ElanPath)
                     break;
                 }
             }
-            _ULonglong refid = id;
+            unsigned long long refid = id;
 
             id = writeKhakSent(elan, id, simple);
 
-            _ULonglong refidWords = id;
+            unsigned long long refidWords = id;
 
             id = writeWordsAsRef(elan, id, refid);
 
@@ -89,7 +90,7 @@ long CKhParser::SaveToELAN(const std::wstring& ElanPath)
     return res;
 }
 
-long CKhParser::SaveToELANFlex(const std::wstring& ElanPath)
+long CKhParser::SaveToELANFlex(const std::string& ElanPath)
 {
     long res = 0;
     std::locale loc = std::locale(std::locale("C"), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>());
@@ -101,7 +102,7 @@ long CKhParser::SaveToELANFlex(const std::wstring& ElanPath)
 
         writeSentOnlyTimes(elan);
 
-        _ULonglong id = 0;
+        unsigned long long id = 0;
         if (names.size() == 0)
             names.insert(std::pair<std::wstring, int>(std::wstring(L""), 1));
         for (size_t i = 1; i <= names.size(); i++) {
@@ -112,11 +113,11 @@ long CKhParser::SaveToELANFlex(const std::wstring& ElanPath)
                     break;
                 }
             }
-            _ULonglong refid = id;
+            unsigned long long refid = id;
             
             id = writeKhakSent(elan, id, simple);
 
-            _ULonglong refidWords = id;
+            unsigned long long refidWords = id;
 
             id = writeWordsAsRef(elan, id, refid);
 
@@ -183,7 +184,7 @@ void CKhParser::writeTail(std::wofstream& ef)
     ef.write(tail.c_str(), tail.length());
 }
 
-void CKhParser::writeTimeSlot(std::wofstream& ef, const _ULonglong& idx, const _ULonglong& begin)
+void CKhParser::writeTimeSlot(std::wofstream& ef, const unsigned long long& idx, const unsigned long long& begin)
 {
     std::wstring str(L"<TIME_SLOT TIME_SLOT_ID=\"ts");
     str.append(std::to_wstring(idx));
@@ -193,7 +194,7 @@ void CKhParser::writeTimeSlot(std::wofstream& ef, const _ULonglong& idx, const _
     ef.write(str.c_str(), str.length());
 }
 
-void CKhParser::writeAnno(std::wofstream& ef, const std::wstring& sent, const _ULonglong& idx, const _ULonglong& time1, const _ULonglong& time2)
+void CKhParser::writeAnno(std::wofstream& ef, const std::wstring& sent, const unsigned long long& idx, const unsigned long long& time1, const unsigned long long& time2)
 {
 //    text = Replace(text, "&H001f", "")
     std::wstring anno(L"<ANNOTATION>\n");
@@ -212,14 +213,14 @@ void CKhParser::writeAnno(std::wofstream& ef, const std::wstring& sent, const _U
     ef.write(anno.c_str(), anno.length());
 }
 
-void CKhParser::writeRefAnno(std::wofstream& ef, const std::wstring& sent, const _ULonglong& idx, const _ULonglong& refid, const _ULonglong& previous)
+void CKhParser::writeRefAnno(std::wofstream& ef, const std::wstring& sent, const unsigned long long& idx, const unsigned long long& refid, const unsigned long long& previous)
 {
     std::wstring anno(L"<ANNOTATION>\n");
     anno.append(L"<REF_ANNOTATION ANNOTATION_ID=\"a");
     anno.append(std::to_wstring(idx));
     anno.append(L"\" ANNOTATION_REF=\"a");
     anno.append(std::to_wstring(refid));
-    if (previous != (_ULonglong)-1) {
+    if (previous != (unsigned long long)-1) {
         anno.append(L"\" PREVIOUS_ANNOTATION=\"a");
         anno.append(std::to_wstring(previous));
     }
@@ -235,8 +236,8 @@ void CKhParser::writeRefAnno(std::wofstream& ef, const std::wstring& sent, const
 void CKhParser::writeTimes(std::wofstream& ef)
 {
     SentVct::iterator it = sentences.begin();
-    _ULonglong idx = 1;
-    _ULonglong begin = 0;
+    unsigned long long idx = 1;
+    unsigned long long begin = 0;
     std::wstring h(L"<TIME_ORDER>\n");
     ef.write(h.c_str(), h.length());
     for (; it != sentences.end(); ++it) {
@@ -246,7 +247,7 @@ void CKhParser::writeTimes(std::wofstream& ef)
             idx += 1;
         } 
     }
-    // временно
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     for (size_t i = 0; i < 20; i++) {
         writeTimeSlot(ef, idx, begin);
         begin += 500;
@@ -262,8 +263,8 @@ void CKhParser::writeTimes(std::wofstream& ef)
 void CKhParser::writeSentOnlyTimes(std::wofstream& ef)
 {
     SentVct::iterator it = sentences.begin();
-    _ULonglong idx = 1;
-    _ULonglong begin = 0;
+    unsigned long long idx = 1;
+    unsigned long long begin = 0;
     std::wstring h(L"<TIME_ORDER>\n");
     ef.write(h.c_str(), h.length());
     for (; it != sentences.end(); ++it) {
@@ -273,7 +274,7 @@ void CKhParser::writeSentOnlyTimes(std::wofstream& ef)
         writeTimeSlot(ef, idx, begin);
         idx += 1;
     }
-    // временно
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     for (size_t i = 0; i < 2; i++) {
         writeTimeSlot(ef, idx, begin);
         begin += 5000;
@@ -313,12 +314,13 @@ void CKhParser::writeTierTail(std::wofstream& ef)
     ef.write(tier.c_str(), tier.length());
 }
 
-_ULonglong CKhParser::writeKhakSent(std::wofstream& ef, _ULonglong& id, const stepType timeStep)
+unsigned long long CKhParser::writeKhakSent(std::wofstream& ef, unsigned long long& id, const stepType timeStep)
 {
-    _ULonglong time1 = 1;
-    _ULonglong time2 = 1;
+    unsigned long long time1 = 1;
+    unsigned long long time2 = 1;
     std::wstring lvlName = lvlNames[Kh_Sent];
-    appendName(lvlName, std::wstring());
+    std::wstring refLvlName;
+    appendName(lvlName, refLvlName);
     writeTierHeader(ef, lvlName, L"paragraph", L"", cur_name);
 
     SentVct::iterator it = sentences.begin();
@@ -340,7 +342,7 @@ _ULonglong CKhParser::writeKhakSent(std::wofstream& ef, _ULonglong& id, const st
     return id;
 }
 
-_ULonglong CKhParser::writeRusSent(std::wofstream& ef, _ULonglong& id)
+unsigned long long CKhParser::writeRusSent(std::wofstream& ef, unsigned long long& id)
 {
     std::wstring lvlName = lvlNames[Rus_Sent];
     std::wstring khLvlName = lvlNames[Kh_Sent];
@@ -349,7 +351,7 @@ _ULonglong CKhParser::writeRusSent(std::wofstream& ef, _ULonglong& id)
     writeTierHeader(ef, lvlName, L"association", khLvlName, cur_name);
 
     SentVct::iterator it = sentences.begin();
-    _ULonglong previous = (_ULonglong)(-1);
+    unsigned long long previous = (unsigned long long)(-1);
     for (; it != sentences.end(); ++it) {
         if (it->informant == cur_name) {
             writeRefAnno(ef, it->rus_sent, id, it->id, previous);
@@ -360,10 +362,10 @@ _ULonglong CKhParser::writeRusSent(std::wofstream& ef, _ULonglong& id)
     return id;
 }
 
-_ULonglong CKhParser::writeWords(std::wofstream& ef, _ULonglong& id)
+unsigned long long CKhParser::writeWords(std::wofstream& ef, unsigned long long& id)
 {
-    _ULonglong time1 = 1;
-    _ULonglong time2 = 1;
+    unsigned long long time1 = 1;
+    unsigned long long time2 = 1;
     std::wstring lvlName = lvlNames[Kh_Words];
     std::wstring khLvlName = lvlNames[Kh_Sent];
     appendName(lvlName, khLvlName);
@@ -393,7 +395,7 @@ _ULonglong CKhParser::writeWords(std::wofstream& ef, _ULonglong& id)
     return id;
 }
 
-_ULonglong CKhParser::writeWordsAsRef(std::wofstream& ef, _ULonglong& id, _ULonglong refid)
+unsigned long long CKhParser::writeWordsAsRef(std::wofstream& ef, unsigned long long& id, unsigned long long refid)
 {
 
     std::wstring lvlName = lvlNames[Kh_Words];
@@ -408,10 +410,10 @@ _ULonglong CKhParser::writeWordsAsRef(std::wofstream& ef, _ULonglong& id, _ULong
     return id;
 }
 
-_ULonglong CKhParser::writeKhakHoms(std::wofstream& ef, _ULonglong& id)
+unsigned long long CKhParser::writeKhakHoms(std::wofstream& ef, unsigned long long& id)
 {
-    _ULonglong time1 = 1;
-    _ULonglong time2 = 1;
+    unsigned long long time1 = 1;
+    unsigned long long time2 = 1;
     std::wstring lvlName = lvlNames[Kh_Homonyms];
     std::wstring khLvlName = lvlNames[Kh_Words];
     appendName(lvlName, khLvlName);
@@ -449,7 +451,7 @@ _ULonglong CKhParser::writeKhakHoms(std::wofstream& ef, _ULonglong& id)
     return id;
 }
 
-_ULonglong CKhParser::writeKhakHomsAsRef(std::wofstream& ef, _ULonglong& id, _ULonglong refid)
+unsigned long long CKhParser::writeKhakHomsAsRef(std::wofstream& ef, unsigned long long& id, unsigned long long refid)
 {
 
     std::wstring lvlName = lvlNames[Kh_Homonyms];
@@ -464,10 +466,10 @@ _ULonglong CKhParser::writeKhakHomsAsRef(std::wofstream& ef, _ULonglong& id, _UL
     return id;
 }
 
-_ULonglong CKhParser::writeKhakMorphems(std::wofstream& ef, _ULonglong& id)
+unsigned long long CKhParser::writeKhakMorphems(std::wofstream& ef, unsigned long long& id)
 {
-    _ULonglong time1 = 1;
-    _ULonglong time2 = 1;
+    unsigned long long time1 = 1;
+    unsigned long long time2 = 1;
     std::wstring lvlName = lvlNames[Kh_Morphems];
     std::wstring khLvlName = lvlNames[Kh_Words];
     appendName(lvlName, khLvlName);
@@ -505,19 +507,19 @@ _ULonglong CKhParser::writeKhakMorphems(std::wofstream& ef, _ULonglong& id)
     return id;
 }
 
-_ULonglong CKhParser::writeRefTier(std::wofstream& ef, _ULonglong& id, _ULonglong _refid, const reftype& type)
+unsigned long long CKhParser::writeRefTier(std::wofstream& ef, unsigned long long& id, unsigned long long _refid, const reftype& type)
 {
     SentVct::iterator it = sentences.begin();
-    _ULonglong sentid = _refid;
-    _ULonglong wordid = _refid;
+    unsigned long long sentid = _refid;
+    unsigned long long wordid = _refid;
     for (; it != sentences.end(); ++it) {
         if (it->informant == cur_name) {
             if (type == homs) {
                 it->firstHomId = id;
             }
-            _ULonglong refid = it->firstHomId;
+            unsigned long long refid = it->firstHomId;
             std::vector<std::wstring>::iterator wt = it->words.begin();
-            _ULonglong previous = (_ULonglong)(-1);
+            unsigned long long previous = (unsigned long long)(-1);
             for (; wt != it->words.end(); ++wt) {
                 if (type == words) {
                     writeRefAnno(ef, (*wt), id, sentid, previous);
@@ -556,7 +558,7 @@ _ULonglong CKhParser::writeRefTier(std::wofstream& ef, _ULonglong& id, _ULonglon
                     }
                 }
                 wordid++;
-                previous = (_ULonglong)(-1);
+                previous = (unsigned long long)(-1);
             }
             sentid++;
         }
@@ -564,7 +566,7 @@ _ULonglong CKhParser::writeRefTier(std::wofstream& ef, _ULonglong& id, _ULonglon
     return id;
 }
 
-_ULonglong CKhParser::writeRusMorphems(std::wofstream& ef, _ULonglong& id, _ULonglong& refid)
+unsigned long long CKhParser::writeRusMorphems(std::wofstream& ef, unsigned long long& id, unsigned long long& refid)
 {
     std::wstring lvlName = lvlNames[Rus_Morphems];
     std::wstring khLvlName = lvlNames[Kh_Morphems];
@@ -578,7 +580,7 @@ _ULonglong CKhParser::writeRusMorphems(std::wofstream& ef, _ULonglong& id, _ULon
     return id;
 }
 
-_ULonglong CKhParser::writeEngMorphems(std::wofstream& ef, _ULonglong& id, _ULonglong& refid)
+unsigned long long CKhParser::writeEngMorphems(std::wofstream& ef, unsigned long long& id, unsigned long long& refid)
 {
     std::wstring lvlName = lvlNames[Eng_Morphems];
     std::wstring khLvlName = lvlNames[Kh_Morphems];
@@ -592,7 +594,7 @@ _ULonglong CKhParser::writeEngMorphems(std::wofstream& ef, _ULonglong& id, _ULon
     return id;
 }
 
-_ULonglong CKhParser::writeRusHoms(std::wofstream& ef, _ULonglong& id, _ULonglong& refid)
+unsigned long long CKhParser::writeRusHoms(std::wofstream& ef, unsigned long long& id, unsigned long long& refid)
 {
     std::wstring lvlName = lvlNames[Rus_Homonyms];
     std::wstring khLvlName = lvlNames[Kh_Homonyms];
@@ -606,7 +608,7 @@ _ULonglong CKhParser::writeRusHoms(std::wofstream& ef, _ULonglong& id, _ULonglon
     return id;
 }
 
-_ULonglong CKhParser::writeEngHoms(std::wofstream& ef, _ULonglong& id, _ULonglong& refid)
+unsigned long long CKhParser::writeEngHoms(std::wofstream& ef, unsigned long long& id, unsigned long long& refid)
 {
     std::wstring lvlName = lvlNames[Eng_Homonyms];
     std::wstring khLvlName = lvlNames[Kh_Homonyms];
@@ -620,7 +622,7 @@ _ULonglong CKhParser::writeEngHoms(std::wofstream& ef, _ULonglong& id, _ULonglon
     return id;
 }
 
-_ULonglong CKhParser::writeLemma(std::wofstream& ef, _ULonglong& id, _ULonglong& refid)
+unsigned long long CKhParser::writeLemma(std::wofstream& ef, unsigned long long& id, unsigned long long& refid)
 {
     std::wstring lvlName = lvlNames[Kh_Lemma];
     std::wstring khLvlName = lvlNames[Kh_Homonyms];
@@ -634,7 +636,7 @@ _ULonglong CKhParser::writeLemma(std::wofstream& ef, _ULonglong& id, _ULonglong&
     return id;
 }
 
-_ULonglong CKhParser::writePartOfSpeech(std::wofstream& ef, _ULonglong& id, _ULonglong& refid)
+unsigned long long CKhParser::writePartOfSpeech(std::wofstream& ef, unsigned long long& id, unsigned long long& refid)
 {
     std::wstring lvlName = lvlNames[Kh_PartOfSpeech];
     std::wstring khLvlName = lvlNames[Kh_Homonyms];

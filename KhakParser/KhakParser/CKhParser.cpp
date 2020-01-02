@@ -24,6 +24,20 @@ std::wstring CKhParser::Rus_Homonyms = L"Rus_Homonyms";
 std::wstring CKhParser::Eng_Homonyms = L"Eng_Homonyms";
 std::wstring CKhParser::Rus_Sent = L"Rus_Sent";
 
+CKhParser::CKhParser()
+:pIXMLHTTPRequest(NULL)
+,request(L"/suddenly/?parse=")
+#ifdef _WINDOWS
+,locinfo(0)
+#endif
+,homonyms(0)
+,currHom(-1)
+,dict("")
+,notfound("")
+,sentences(0)
+,russian(std::locale(RUS_LOCALE), new std::codecvt_utf8<wchar_t, 0x10ffff, std::consume_header>())
+{}
+
 long CKhParser::Init(const std::wstring& www, const std::string& dictPath, const std::string& notfoundPath)
 {
     Terminate();
@@ -68,7 +82,9 @@ long CKhParser::Init(const std::wstring& www, const std::string& dictPath, const
 
 long CKhParser::Terminate(void)
 {
+#ifdef _WINDOWS
     saveResults();
+#endif
     delete pIXMLHTTPRequest;
     repl.clear();
 #ifdef _WINDOWS

@@ -69,19 +69,7 @@ typedef std::vector<sent> SentVct;
 class CKhParser
 {
 public:
-    CKhParser():
-      pIXMLHTTPRequest(NULL),
-      request(L"/suddenly/?parse="),
-#ifdef _WINDOWS              
-      locinfo(0),
-#endif
-      homonyms(0),
-      currHom(-1),
-      dict(""),
-      notfound(""),
-      sentences(0),
-      russian(std::locale(RUS_LOCALE), new std::codecvt_utf8<wchar_t, 0x10ffff, std::consume_header>())
-      /*      tmpResp(L"Parsing: тустарда\n\
+    CKhParser();/*      tmpResp(L"Parsing: тустарда\n\
 FOUND STEM: ----------Pl---Loc---- ----------тар---да----\n\
 n тус ‛соль’ \n\
 FOUND STEM: ----------Pl---Loc---- ----------тар---да----\n\
@@ -89,8 +77,6 @@ n тус ‛время’ \n\
 FOUND STEM: ----------Pl---Loc---- ----------тар---да----\n\
 n тус ‛напротив’ \n\
 3  wordforms generated in 3571 μs.") */
-    {
-    }
 
     long Init(const std::wstring& www, const std::string& dict, const std::string& notfound);
     long Terminate(void);

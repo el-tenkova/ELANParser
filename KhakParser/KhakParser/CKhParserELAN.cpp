@@ -93,10 +93,10 @@ long CKhParser::SaveToELAN(const std::string& ElanPath)
 long CKhParser::SaveToELANFlex(const std::string& ElanPath)
 {
     long res = 0;
-    std::locale loc = std::locale(std::locale("C"), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>());
+//    std::locale loc = std::locale(std::locale("C"), new std::codecvt_utf8<wchar_t, 0x10ffff, std::generate_header>());
     std::wofstream elan(ElanPath, std::wofstream::binary);
     if (elan.is_open()) {
-        elan.imbue(loc);
+        elan.imbue(russian);
 
         writeHeader(elan);
 

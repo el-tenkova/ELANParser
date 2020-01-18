@@ -8,11 +8,12 @@
 #include <codecvt>
 #include <iostream>
 
-CKhHttpWrapper::CKhHttpWrapper(long* hRes, const char* _www)
+CKhHttpWrapper::CKhHttpWrapper(long* hRes, const char* _www, const char* _protocol)
 : russian(std::locale(RUS_LOCALE), new std::codecvt_utf8<wchar_t, 0x10ffff, std::consume_header>())
 , statusCode(0) {
     *hRes = 0;
     www.append(_www);
+    protocol.append(_protocol);
 }
 
 CKhHttpWrapper::~CKhHttpWrapper(void) {
@@ -29,7 +30,7 @@ long CKhHttpWrapper::Send(void) {
     boost::asio::io_service io_service;
     // Get a list of endpoints corresponding to the server name.
     tcp::resolver resolver(io_service);
-    tcp::resolver::query query(www, "http");
+    tcp::resolver::query query(www, protocol);
     tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
 
     // Try each endpoint until we successfully establish a connection.

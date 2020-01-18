@@ -78,7 +78,11 @@ FOUND STEM: ----------Pl---Loc---- ----------тар---да----\n\
 n тус ‛напротив’ \n\
 3  wordforms generated in 3571 μs.") */
 
+#ifdef _WINDOWS
     long Init(const std::wstring& www, const std::string& dict, const std::string& notfound);
+#else
+    long Init(const std::string& www, const std::string& dict, const std::string& notfound);
+#endif
     long Terminate(void);
     long DoParse(const std::wstring& InputWord);
     long AddKhakSent(const std::wstring& InputSent);

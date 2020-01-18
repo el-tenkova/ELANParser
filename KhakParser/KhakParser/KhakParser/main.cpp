@@ -28,12 +28,13 @@ using namespace std;
  */
 int main(int argc, char** argv)
 {
-
-    CKhParser kp;
-    kp.Init(L"http://khakas.altaica.ru", "", "");
-
     std::string input("");
     std::string output("");
+    std::string host("http://khakas.altaica.ru");
+    int mode = 1;
+    // 1 name|khak|rus
+    // 2 khak|rus
+    // 3 khak
     for (int i = 1; i < argc; i+=2) {
         if (strcmp(argv[i], "-i") == 0) {
             std::cout << argv[i + 1] << std::endl;
@@ -43,9 +44,20 @@ int main(int argc, char** argv)
             std::cout << argv[i + 1] << std::endl;
             output = argv[i + 1];
         }
+        else if (strcmp(argv[i], "-m") == 0) {
+            std::cout << argv[i + 1] << std::endl;
+            mode = atoi(argv[i + 1]);
+        }
+        else if (strcmp(argv[i], "-h") == 0) {
+            std::cout << argv[i + 1] << std::endl;
+            host = argv[i + 1];
+        }
     }
+    std::cout << "mode = " << std::to_string(mode) << std::endl;
+    std::cout << "host = " << host << std::endl;
+    CKhParser kp;
+    kp.Init(host, "", "");
 
-//    std::wifstream infile("/home/elan/text-b.txt", std::wifstream::binary);
     std::wifstream infile(input, std::wifstream::binary);
     std::locale russian(std::locale(RUS_LOCALE), new std::codecvt_utf8<wchar_t, 0x10ffff, std::consume_header>());
 
@@ -59,21 +71,40 @@ int main(int argc, char** argv)
             std::wstring name(L"");
             size_t beg = 0;
             size_t end = line.find(L'|', beg);
-            if (end == std::wstring::npos)
+            if (end == std::wstring::npos && mode != 3)
                 continue;
             name = line.substr(beg, end - beg);
             std::wcout << name << std::endl;
             std::wstring khak(L"");
-            beg = end + 1;
-            end = line.find(L'|', beg);
-            std::cout << beg << " " << end << std::endl;
-            khak = line.substr(beg, end - beg);
-            std::wcout << khak << std::endl;
-            std::wstring rus(L"");
-            rus = line.substr(end + 1);
-            std::wcout << rus << std::endl;
-            kp.AddKhakSent2(name, khak);
-            kp.AddRusSent(rus);
+            if (mode == 1 || mode == 2)
+            {
+                beg = end + 1;
+                end = line.find(L'|', beg);
+                std::cout << beg << " " << end << std::endl;
+                khak = line.substr(beg, end - beg);
+                std::wcout << khak << std::endl;
+                std::wstring rus(L"");
+                if (mode == 1)
+                {
+                    rus = line.substr(end + 1);
+                    std::wcout << rus << std::endl;
+                    kp.AddKhakSent2(name, khak);
+                    kp.AddRusSent(rus);
+                }
+                else
+                {
+                    rus = khak;
+                    khak = name;
+                    kp.AddKhakSent(khak);
+                    kp.AddRusSent(rus);
+                }
+            }
+            else
+            {
+                khak = name;
+                kp.AddKhakSent(khak);
+                kp.AddRusSent(L"");
+            }
             std::wstring khak1(khak);
             size_t pos = khak1.find_first_of(L".,;!:-?");
             while (pos != std::wstring::npos)
@@ -91,8 +122,10 @@ int main(int argc, char** argv)
                 kp.DoParse(*pit);
             }
         }
-//        kp.SaveToELANFlex("/home/elan/result.eaf");
-        kp.SaveToELANFlex(output);
+        if (mode == 1)
+            kp.SaveToELANFlex(output);
+        else
+            kp.SaveToELAN(output);
     }
     kp.Terminate();
     return 0;

@@ -2,6 +2,7 @@
 #ifdef _WINDOWS
     #include "stdafx.h"
 #endif
+#include <string>
 #include <locale.h>
 #include <fstream>
 #include <codecvt>
@@ -9,6 +10,7 @@
 #include <algorithm>
 #include <iterator>
 #include <functional>
+#include <iostream>
 
 #include "CKhParser.h"
 
@@ -37,17 +39,32 @@ CKhParser::CKhParser()
 ,sentences(0)
 ,russian(std::locale(RUS_LOCALE), new std::codecvt_utf8<wchar_t, 0x10ffff, std::consume_header>())
 {}
-
+#ifdef _WINDOWS
 long CKhParser::Init(const std::wstring& www, const std::string& dictPath, const std::string& notfoundPath)
+#else
+long CKhParser::Init(const std::string& www, const std::string& dictPath, const std::string& notfoundPath)
+#endif
 {
     Terminate();
+    long hRes = 0;
     dict = std::string(dictPath);
     notfound = std::string(notfoundPath);
     //"http://khakas.altaica.ru"
+#ifdef _WINDOWS
     request = www + request;
-    long hRes = 0;
-    pIXMLHTTPRequest = new CKhHttpWrapper(&hRes, "khakas.altaica.ru");
-    
+    pIXMLHTTPRequest = new CKhHttpWrapper(&hRes, www, "");
+#else
+    size_t pos = www.find("://");
+    std::string protocol(pos != std::string::npos ? www.substr(0, www.find("://")) : "http");
+    std::cout << "protocol = " << protocol << std::endl;
+    std::wstring www1(www.begin(), www.end());
+    request = www1 + request;
+    std::string www2(pos != std::string::npos ? www.substr(protocol.length() + 3) : www);
+    pIXMLHTTPRequest = new CKhHttpWrapper(&hRes, www2.c_str(), protocol.c_str());
+    std::cout << "www = " << www << std::endl;
+    std::cout << "www2 = " << www2 << std::endl;
+    std::wcout << L"request = " << request << std::endl;
+#endif
     repl.insert(std::pair<short, short>(L'a', 0x0430));
     repl.insert(std::pair<short, short>(L'c', 0x0441));
     repl.insert(std::pair<short, short>(L'e', 0x0435));

@@ -1,4 +1,4 @@
-﻿// CKhParser.cpp : Implementation of CKhParser
+// CKhParser.cpp : Implementation of CKhParser
 #ifdef _WINDOWS
     #include "stdafx.h"
 #endif
@@ -334,8 +334,10 @@ long CKhParser::fillHomonyms(const std::wstring& response)
                 if (stem[i] == L' ')
                     stem[i] = 0x0;
         }
-        if (stem[0] != 0x0)
+        if (stem[0] != 0x0 && stem[0] != L'-')
             homonym.khak = std::wstring(stem);
+        else if (stem[0] == L'-')
+            homonym.khak = std::wstring(L"stem");
         else
             homonym.khak = std::wstring(headword);
         homonym.morphems.push_back(homonym.khak);
@@ -438,6 +440,13 @@ wchar_t* CKhParser::getSubstr(const wchar_t* str, wchar_t endCh)
     int i, start = 0;
     for (i = 0; str[i] == ' '; i++);
     start = i;
+    if (wcschr(str + start, endCh) == 0)
+    {
+        headword = new wchar_t[2];
+        headword[0] = L'-';
+        headword[1] = 0x0;
+        return headword;
+    }
     size_t len = wcschr(str + start, endCh) - (str + start);
     headword = new wchar_t [len + 1];
     memcpy(headword, str + start, len*sizeof(wchar_t));

@@ -146,6 +146,62 @@ long CKhParser::SaveToELANFlex(const std::string& ElanPath)
     }
     return res;
 }
+long CKhParser::SaveToELANFlexTime(const std::string& ElanPath)
+{
+    long res = 0;
+    std::wofstream elan(ElanPath, std::wofstream::binary);
+    if (elan.is_open()) {
+        elan.imbue(russian);
+
+        writeHeader(elan);
+
+        calcSentTime();
+        writeSentOnlyTimesExt(elan);
+
+        unsigned long long id = 0;
+        if (names.size() == 0)
+            names.insert(std::pair<std::wstring, int>(std::wstring(L""), 1));
+        for (size_t i = 1; i <= names.size(); i++) {
+            std::map<std::wstring, int>::iterator nit = names.begin();
+            for (; nit != names.end(); ++nit) {
+                if (i == nit->second) {
+                    cur_name = nit->first;
+                    break;
+                }
+            }
+            unsigned long long refid = id;
+
+            id = writeKhakSent(elan, id, simple);
+
+            unsigned long long refidWords = id;
+
+            id = writeWordsAsRef(elan, id, refid);
+
+            id = writeKhakHomsAsRef(elan, id, refidWords);
+
+            id = writeLemma(elan, id, refidWords);
+
+            id = writePartOfSpeech(elan, id, refidWords);
+
+            /*            refid = id;
+            id = writeKhakMorphems(elan, id); */
+
+            //            id = writeRusMorphems(elan, id, refidWords);
+
+            //            id = writeEngMorphems(elan, id, refid);
+
+            id = writeRusHoms(elan, id, refid);
+
+            //          id = writeEngHoms(elan, id, refid);
+
+            id = writeRusSent(elan, id);
+        }
+        writeTail(elan);
+
+        elan.close();
+    }
+    return res;
+}
 
 void CKhParser::writeHeader(std::wofstream& ef)
 {
@@ -268,6 +324,7 @@ void CKhParser::writeSentOnlyTimes(std::wofstream& ef)
     std::wstring h(L"<TIME_ORDER>\n");
     ef.write(h.c_str(), h.length());
     for (; it != sentences.end(); ++it) {
+        begin = it->begin;
         writeTimeSlot(ef, idx, begin);
         idx += 1;
         begin += 5000;
@@ -282,6 +339,28 @@ void CKhParser::writeSentOnlyTimes(std::wofstream& ef)
     }
     //  writeTimeSlot(ef, idx, begin);
     //  writeTimeSlot(ef, idx + 1, begin + 500);
+    h.erase();
+    h = L"</TIME_ORDER>\n";
+    ef.write(h.c_str(), h.length());
+}
+void CKhParser::writeSentOnlyTimesExt(std::wofstream& ef)
+{
+    SentVct::iterator it = sentences.begin();
+    unsigned long long idx = 1;
+    std::wstring h(L"<TIME_ORDER>\n");
+    ef.write(h.c_str(), h.length());
+    for (; it != sentences.end(); ++it) {
+        writeTimeSlot(ef, idx, it->begin);
+        idx += 1;
+        writeTimeSlot(ef, idx, it->end);
+        idx += 1;
+    }
+    unsigned long long begin = (sentences.end() - 1)->end;
+    for (size_t i = 0; i < 2; i++) {
+        writeTimeSlot(ef, idx, begin);
+        begin += 5000;
+        idx += 1;
+    }
     h.erase();
     h = L"</TIME_ORDER>\n";
     ef.write(h.c_str(), h.length());
@@ -663,5 +742,32 @@ void CKhParser::appendName(std::wstring& lvlName, std::wstring& refLvlName)
         if (refLvlName.length() != 0) {
             refLvlName = cur_name + std::wstring(L"_") + refLvlName;
         }
+    }
+}
+
+void CKhParser::calcSentTime(void)
+{
+    std::wstring cur;
+    std::map<std::wstring, int>::iterator nit = names.begin();
+    for (; nit != names.end(); ++nit) {
+        cur = nit->first;
+        SentVct::iterator it = sentences.begin();
+        SentVct::iterator previt = sentences.end();
+        unsigned long long prevTime = it->begin;
+        for (; it != sentences.end(); ++it) {
+            if (it->informant != cur)
+                continue;
+            if (it != previt && previt != sentences.end())
+            {
+                if (it->begin == previt->begin)
+                    it->begin += 300;
+                previt->end = it->begin;
+                if (previt->end - previt->begin > 10000)
+                    previt->end = previt->begin + 10000;
+            }
+            previt = it;
+        }
+        if (previt != sentences.end())
+            previt->end = previt->begin + 10000;
     }
 }

@@ -12,11 +12,12 @@ class CKhHttpWrapper
 {
 protected:
     std::string www;
+    std::string protocol;
     std::string request;
     IXMLHTTPRequestPtr pIXMLHTTPRequest;
 
 public:
-    CKhHttpWrapper(long* hRes, const char* www);
+    CKhHttpWrapper(long* hRes, const char* www, const char* protocol);
     ~CKhHttpWrapper(void);
 
 public:

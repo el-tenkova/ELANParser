@@ -1,6 +1,9 @@
 #ifdef _WINDOWS
 #include "stdafx.h"
 #endif
+#ifdef _USE_MSXML2
+#else
+
 #include "CKhHttpL.h"
 
 #include <string>
@@ -98,3 +101,4 @@ size_t CKhHttpWrapper::Status(void) {
 const wchar_t* CKhHttpWrapper::ResponseText(void) {
     return (responseText.c_str());
 }
+#endif // _USE_MSXML2

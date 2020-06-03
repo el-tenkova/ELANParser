@@ -3,11 +3,21 @@
 #include "KhakParser_i.h"
 #include "CKhParserCOM.h"
 
-STDMETHODIMP CKhParserCOM::Init(int cSafeArr, BSTR www, BSTR dictPath, BSTR notfoundPath, long* hRes)
+STDMETHODIMP CKhParserCOM::Init(int cSafeArr, BSTR _www, BSTR _dictPath, BSTR _notfoundPath, long* hRes)
 {
     safeArraySize = cSafeArr;
-    *hRes = pureParser.Init(www, dictPath, notfoundPath);
+    char tmp[512] = "";
+    size_t len;
+    _locale_t locale = _create_locale(LC_ALL, "ru-RU");
+    errno_t err = _wcstombs_s_l(&len, tmp, sizeof(tmp), _dictPath, _TRUNCATE, locale);
+    std::string dictPath(tmp);
+    *tmp = 0x0;
+    len = 0;
+    _wcstombs_s_l(&len, tmp, sizeof(tmp), _notfoundPath, _TRUNCATE, locale);
+    std::string notfoundPath(tmp);
+    *hRes = pureParser.Init(_www, dictPath, notfoundPath);
     safeArraySize = cSafeArr;
+    _free_locale(locale);
     return *hRes;
 }
 
@@ -19,6 +29,8 @@ STDMETHODIMP CKhParserCOM::Terminate(long* hRes)
 
 HRESULT CKhParserCOM::DoParse(BSTR word, long* hRes)
 {
+    if (word == 0)
+        return S_OK;
     *hRes = pureParser.DoParse(word);
      return S_OK;
 }
@@ -71,6 +83,12 @@ HRESULT CKhParserCOM::AddKhakSent2(BSTR Name, BSTR InputSent, long* hRes)
     return S_OK;
 }
 
+HRESULT CKhParserCOM::AddKhakSent3(BSTR Name, BSTR Time, BSTR InputSent, long* hRes)
+{
+    *hRes = pureParser.AddKhakSent3(Name, Time, InputSent);
+    return S_OK;
+}
+
 HRESULT CKhParserCOM::AddRusSent(BSTR InputSent, long* hRes)
 {
     *hRes = pureParser.AddRusSent(InputSent);
@@ -78,6 +96,34 @@ HRESULT CKhParserCOM::AddRusSent(BSTR InputSent, long* hRes)
 }
 HRESULT CKhParserCOM::SaveToELAN(BSTR ElanPath, /*[out, retval]*/ long *hRes)
 {
-    *hRes = pureParser.SaveToELAN(ElanPath);
+    _locale_t locale = _create_locale(LC_ALL, "ru-RU");
+    char tmp[512] = "";
+    size_t len = 0;
+    _wcstombs_s_l(&len, tmp, sizeof(tmp), ElanPath, _TRUNCATE, locale);
+    std::string elanPath(tmp);
+    *hRes = pureParser.SaveToELAN(elanPath);
+    _free_locale(locale);
+    return S_OK;
+}
+HRESULT CKhParserCOM::SaveToELANFlex(BSTR ElanPath, /*[out, retval]*/ long *hRes)
+{
+    _locale_t locale = _create_locale(LC_ALL, "ru-RU");
+    char tmp[512] = "";
+    size_t len = 0;
+    _wcstombs_s_l(&len, tmp, sizeof(tmp), ElanPath, _TRUNCATE, locale);
+    std::string elanPath(tmp);
+    *hRes = pureParser.SaveToELANFlex(elanPath);
+    _free_locale(locale);
+    return S_OK;
+}
+HRESULT CKhParserCOM::SaveToELANFlexTime(BSTR ElanPath, /*[out, retval]*/ long *hRes)
+{
+    _locale_t locale = _create_locale(LC_ALL, "ru-RU");
+    char tmp[512] = "";
+    size_t len = 0;
+    _wcstombs_s_l(&len, tmp, sizeof(tmp), ElanPath, _TRUNCATE, locale);
+    std::string elanPath(tmp);
+    *hRes = pureParser.SaveToELANFlexTime(elanPath);
+    _free_locale(locale);
     return S_OK;
 }

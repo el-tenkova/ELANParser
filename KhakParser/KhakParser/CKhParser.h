@@ -58,6 +58,8 @@ struct sent
     std::vector<std::wstring> words; // последовательность слов в предложении
     std::map<std::wstring, std::wstring> keys; // исходное слово : нормализованное слово (ключ в словаре cache)
     std::wstring informant; // имя участника разговора
+    unsigned long long begin; // время начала предложения
+    unsigned long long end; // время конца предложения
     unsigned long long id; //индекс хакасского предложения
     unsigned long long firstHomId; // индекс первого омонима (для соотв. русских ref)
     unsigned long long time1; //начало разговора
@@ -88,8 +90,10 @@ n тус ‛напротив’ \n\
     long AddKhakSent(const std::wstring& InputSent);
     long AddRusSent(const std::wstring& InputSent);
     long AddKhakSent2(const std::wstring& Name, const std::wstring& InputSent);
+    long AddKhakSent3(const std::wstring& Name, const std::wstring& Time, const std::wstring& InputSent);
     long SaveToELAN(const std::string& ElanPath);
     long SaveToELANFlex(const std::string& ElanPath);
+    long SaveToELANFlexTime(const std::string& ElanPath);
     int GetHomonymNum(void);
     long GetNextHomonym(std::wstring& hom);
 
@@ -154,6 +158,7 @@ protected:
 
     void writeTimes(std::wofstream& ef);
     void writeSentOnlyTimes(std::wofstream& ef);
+    void writeSentOnlyTimesExt(std::wofstream& ef);
     unsigned long long writeKhakSent(std::wofstream& ef, unsigned long long& id, const stepType timeStep);
     unsigned long long writeRusSent(std::wofstream& ef, unsigned long long& id);
     unsigned long long writeWords(std::wofstream& ef, unsigned long long& id);
@@ -169,6 +174,7 @@ protected:
     unsigned long long writeRusMorphems(std::wofstream& ef, unsigned long long& id, unsigned long long& refid);
     unsigned long long writeEngMorphems(std::wofstream& ef, unsigned long long& id, unsigned long long& refid);
     void appendName(std::wstring& lvlName, std::wstring& refLvlName);
+    void calcSentTime(void);
 };
 
 #endif //__KHPARSERPURE_H_

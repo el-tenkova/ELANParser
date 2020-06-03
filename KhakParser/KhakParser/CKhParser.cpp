@@ -14,6 +14,10 @@
 
 #include "CKhParser.h"
 
+#ifdef _WINDOWS
+#define RUS_LOCALE "Russian"
+#endif
+
 std::wstring CKhParser::Kh_Sent = L"KH_Sent";
 std::wstring CKhParser::Kh_Words = L"Kh_Words";
 std::wstring CKhParser::Kh_Homonyms = L"Kh_Homonyms";
@@ -52,7 +56,13 @@ long CKhParser::Init(const std::string& www, const std::string& dictPath, const 
     //"http://khakas.altaica.ru"
 #ifdef _WINDOWS
     request = www + request;
-    pIXMLHTTPRequest = new CKhHttpWrapper(&hRes, www, "");
+    _locale_t locale = _create_locale(LC_ALL, "ru-RU");
+    char tmp[512] = "";
+    size_t len = 0;
+    _wcstombs_s_l(&len, tmp, sizeof(tmp), www.c_str(), _TRUNCATE, locale);
+    std::string _www(tmp);
+    pIXMLHTTPRequest = new CKhHttpWrapper(&hRes, _www.c_str(), "");
+    _free_locale(locale);
 #else
     size_t pos = www.find("://");
     std::string protocol(pos != std::string::npos ? www.substr(0, www.find("://")) : "http");
@@ -137,7 +147,7 @@ long CKhParser::DoParse(const std::wstring& word)
         homonyms.clear();
         currHom = -1;
         eit->second++;
-    //    addToSentSize(1);
+        //    addToSentSize(1);
         return 0;
     }
     HomMap::iterator it = cache.find(normWord);
@@ -165,7 +175,7 @@ long CKhParser::DoParse(const std::wstring& word)
         return hRes;
 
     size_t status= pIXMLHTTPRequest->Status();
-    if (pIXMLHTTPRequest->Status() == 200)
+    if (status == 200)
     { 
         fillHomonyms(pIXMLHTTPRequest->ResponseText());
         if (homonyms.size() > 0) {
@@ -210,6 +220,8 @@ long CKhParser::AddKhakSent(const std::wstring& InputSent)
     sent newSent;
     newSent.khak_sent = std::wstring(InputSent);
     newSent.informant = std::wstring(L"");
+    newSent.begin = 0;
+    newSent.end = 0;
     size_t pos = newSent.khak_sent.find(0x1f);
     while (pos != std::wstring::npos) {
         newSent.khak_sent.replace(pos, 1, L"");
@@ -225,6 +237,51 @@ long CKhParser::AddKhakSent2(const std::wstring& Name, const std::wstring& Input
     sent newSent;
     newSent.khak_sent = std::wstring(InputSent);
     newSent.informant = std::wstring(Name);
+    newSent.begin = 0;
+    newSent.end = 0;
+    size_t begin = 0, end = newSent.informant.length();
+    for (std::wstring::iterator it = newSent.informant.begin(); it != newSent.informant.end(); ++it) {
+        if (*it == L' ' || *it == L'\x09')
+            begin++;
+        else
+            break;
+    }
+    for (std::wstring::iterator it = newSent.informant.end() - 1; it != newSent.informant.begin(); --it) {
+        if (*it == L' ' || *it == L'\t')
+            end--;
+        else
+            break;
+    }
+    newSent.informant = newSent.informant.substr(begin, end);
+    if (names.find(newSent.informant) == names.end())
+        names.insert(std::pair<std::wstring, int>(newSent.informant, (int)(names.size() + 1)));
+    size_t pos = newSent.khak_sent.find(0x1f);
+    while (pos != std::wstring::npos) {
+        newSent.khak_sent.replace(pos, 1, L"");
+        pos = newSent.khak_sent.find(0x1f);
+    }
+    newSent.size = 0;
+    sentences.push_back(newSent);
+    return 0;
+}
+
+long CKhParser::AddKhakSent3(const std::wstring& Name, const std::wstring& Time, const std::wstring& InputSent)
+{
+    sent newSent;
+    newSent.khak_sent = std::wstring(InputSent);
+    newSent.informant = std::wstring(Name);
+    newSent.begin = 0;
+    newSent.end = 0;
+    std::wstring beg(Time);
+    int seconds = 0, minutes = 0;
+    if (beg.length() > 0)
+    {
+        minutes = std::stoi(beg);
+        size_t pt = beg.find(L'.');
+        if (pt != std::wstring::npos && pt < beg.length() - 1)
+            seconds = std::stoi(beg.substr(pt + 1));
+    }
+    newSent.begin = (minutes * 60 + seconds) * 1000;
     size_t begin = 0, end = newSent.informant.length();
     for (std::wstring::iterator it = newSent.informant.begin(); it != newSent.informant.end(); ++it) {
         if (*it == L' ' || *it == L'\x09')

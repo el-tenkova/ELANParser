@@ -25,28 +25,57 @@ import "ocidl.idl";
         [id(7), helpstring("method AddKhakSent")] HRESULT AddKhakSent( BSTR InputSent, [out, retval] long *hRes );
         [id(8), helpstring("method AddRusSent")] HRESULT AddRusSent( BSTR InputSent, [out, retval] long *hRes );
         [id(9), helpstring("method AddKhakSent2")] HRESULT AddKhakSent2(BSTR Name, BSTR InputSent, [out, retval] long *hRes);
-        [id(10), helpstring("method SaveToELAN")] HRESULT SaveToELAN( BSTR ElanPath, [out, retval] long *hRes );
-        [id(11), helpstring("method SaveToELANFlex")] HRESULT SaveToELANFlex(BSTR ElanPath, [out, retval] long *hRes);
+        [id(10), helpstring("method AddKhakSent3")] HRESULT AddKhakSent3(BSTR Name, BSTR Time, BSTR InputSent, [out, retval] long *hRes);
+        [id(11), helpstring("method SaveToELAN")] HRESULT SaveToELAN( BSTR ElanPath, [out, retval] long *hRes );
+        [id(12), helpstring("method SaveToELANFlex")] HRESULT SaveToELANFlex(BSTR ElanPath, [out, retval] long *hRes);
+        [id(13), helpstring("method SaveToELANFlexTime")] HRESULT SaveToELANFlexTime(BSTR ElanPath, [out, retval] long *hRes);
 
     };
 
+// Lingvo
 [
-    uuid(743F8BDE-1839-4C4C-9518-9A3ABFAA1BDF),
-    version(1.0),
+	object,
+	uuid("C88ADAF0-BDC9-4095-B8A7-FBFE079A80AF"),
+	dual,
+	helpstring("ILingvo Interface"),
+	pointer_default(unique),
+]
+interface ILingvo : IDispatch
+{
+	[id(1), helpstring("method Init")] HRESULT Init(int cSafeArr, BSTR www, [out, retval] long *hRes);
+	[id(2), helpstring("method Terminate")] HRESULT Terminate([out, retval] long *hRes);
+	[id(3), helpstring("method DoTranslate")] HRESULT DoTranslate(BSTR InputWord, [out, retval] long *hRes);
+};
+
+[
+	uuid("8D283FEA-2D65-44D7-8284-607101D07B14"),
+	version(1.0),
 ]
 
 library KhakParserLib
 {
-        importlib("stdole32.tlb");
-        importlib("stdole2.tlb");
-        [
-            uuid(8E01F725-F6EA-4B08-BE86-7E758B0AEF48),
-            helpstring("KhParser Class")
-        ]
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+	[
+		uuid(8E01F725-F6EA-4B08-BE86-7E758B0AEF48),
+		helpstring("KhParser Class")
+	]
 
-        coclass KhParser
-        {
-            [default] interface IKhParser;
+	coclass KhParser
+	{
+		[default] interface IKhParser;
 
-        };
+	};
+
+	[
+		uuid(DEBFF465-35AD-485F-B6D1-939136A0BD70),
+		helpstring("Lingvo Class")
+	]
+
+	coclass Lingvo
+	{
+		[default] interface ILingvo;
+
+	};
 };
+

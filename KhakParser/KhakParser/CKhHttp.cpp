@@ -3,12 +3,13 @@
 #ifdef _USE_MSXML2
 #include "CKhHttp.h"
 
-CKhHttpWrapper::CKhHttpWrapper(long* hRes, const char* _www)
+CKhHttpWrapper::CKhHttpWrapper(long* hRes, const char* _www, const char* _protocol)
 {
     long res = pIXMLHTTPRequest.CreateInstance("Msxml2.ServerXMLHTTP");
     if (hRes != 0)
         *hRes = res;
     www.append(_www);
+    protocol.append(_protocol);
 }
 CKhHttpWrapper::~CKhHttpWrapper(void)
 {

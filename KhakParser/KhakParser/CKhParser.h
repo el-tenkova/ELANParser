@@ -55,6 +55,7 @@ struct sent
     int size; // суммарное количество омонимов в предложении (если слово не парсировано +1)
     std::wstring khak_sent; // хакасское предложение
     std::wstring rus_sent; // русское предложение
+    std::wstring transcr; // транскрипция
     std::vector<std::wstring> words; // последовательность слов в предложении
     std::map<std::wstring, std::wstring> keys; // исходное слово : нормализованное слово (ключ в словаре cache)
     std::wstring informant; // имя участника разговора
@@ -89,6 +90,7 @@ n тус ‛напротив’ \n\
     long DoParse(const std::wstring& InputWord);
     long AddKhakSent(const std::wstring& InputSent);
     long AddRusSent(const std::wstring& InputSent);
+    long AddTranscription(const std::wstring& InputSent);
     long AddKhakSent2(const std::wstring& Name, const std::wstring& InputSent);
     long AddKhakSent3(const std::wstring& Name, const std::wstring& Time, const std::wstring& InputSent);
     long SaveToELAN(const std::string& ElanPath);
@@ -124,7 +126,9 @@ protected:
     std::wstring cur_name; //текущий пользователь при записи слоя
 
     std::map<std::wstring, std::wstring> lvlNames;
+    std::map<std::wstring, int> lvlExist;
     static std::wstring Kh_Sent;
+    static std::wstring Transcr;
     static std::wstring Kh_Words;
     static std::wstring Kh_Homonyms;
     static std::wstring Kh_Lemma;
@@ -160,7 +164,9 @@ protected:
     void writeSentOnlyTimes(std::wofstream& ef);
     void writeSentOnlyTimesExt(std::wofstream& ef);
     unsigned long long writeKhakSent(std::wofstream& ef, unsigned long long& id, const stepType timeStep);
+    unsigned long long writeFirstTier(std::wofstream& ef, unsigned long long& id, const stepType timeStep);
     unsigned long long writeRusSent(std::wofstream& ef, unsigned long long& id);
+    unsigned long long writeTranscription(std::wofstream& ef, unsigned long long& id);
     unsigned long long writeWords(std::wofstream& ef, unsigned long long& id);
     unsigned long long writeKhakHoms(std::wofstream& ef, unsigned long long& id);
     unsigned long long writeWordsAsRef(std::wofstream& ef, unsigned long long& id, const unsigned long long refid);

@@ -33,6 +33,7 @@ public:
     STDMETHOD(Normalize)(BSTR InputWord, /*[in, out] */SAFEARRAY** lpNormalized);
     STDMETHOD(AddKhakSent)(BSTR InputSent, /*[out, retval]*/ long* hRes);
     STDMETHOD(AddRusSent)(BSTR InputSent, /*[out, retval]*/ long* hRes);
+    STDMETHOD(AddTranscription)(BSTR InputSent, /*[out, retval]*/ long* hRes);
     STDMETHOD(AddKhakSent2)(BSTR Name, BSTR InputSent, /*[out, retval]*/ long* hRes);
     STDMETHOD(AddKhakSent3)(BSTR Name, BSTR Time, BSTR InputSent, /*[out, retval]*/ long* hRes);
     STDMETHOD(SaveToELAN)(BSTR ElanPath, /*[out, retval]*/ long *hRes);

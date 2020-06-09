@@ -94,6 +94,13 @@ HRESULT CKhParserCOM::AddRusSent(BSTR InputSent, long* hRes)
     *hRes = pureParser.AddRusSent(InputSent);
     return S_OK;
 }
+
+HRESULT CKhParserCOM::AddTranscription(BSTR InputSent, long* hRes)
+{
+    *hRes = pureParser.AddTranscription(InputSent);
+    return S_OK;
+}
+
 HRESULT CKhParserCOM::SaveToELAN(BSTR ElanPath, /*[out, retval]*/ long *hRes)
 {
     _locale_t locale = _create_locale(LC_ALL, "ru-RU");

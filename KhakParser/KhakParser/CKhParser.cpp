@@ -19,6 +19,7 @@
 #endif
 
 std::wstring CKhParser::Kh_Sent = L"KH_Sent";
+std::wstring CKhParser::Transcr = L"Transcr";
 std::wstring CKhParser::Kh_Words = L"Kh_Words";
 std::wstring CKhParser::Kh_Homonyms = L"Kh_Homonyms";
 std::wstring CKhParser::Kh_Lemma = L"Kh_Lemma";
@@ -94,6 +95,7 @@ long CKhParser::Init(const std::string& www, const std::string& dictPath, const 
     locinfo = _create_locale(LC_ALL, locale_name);
 #endif
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Sent, L"Transcription-txt-kjh"));
+    lvlNames.insert(std::pair<std::wstring, std::wstring>(Transcr, L"Phonetic-txt-kjh"));
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Words, L"Words-txt-kjh"));
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Homonyms, L"Morph-txt-kjh"));
     lvlNames.insert(std::pair<std::wstring, std::wstring>(Kh_Lemma, L"Lemma-txt-kjh"));
@@ -267,9 +269,11 @@ long CKhParser::AddKhakSent2(const std::wstring& Name, const std::wstring& Input
 
 long CKhParser::AddKhakSent3(const std::wstring& Name, const std::wstring& Time, const std::wstring& InputSent)
 {
+    if (InputSent.length() > 0)
+        lvlExist[Kh_Sent] = 1;
     sent newSent;
     newSent.khak_sent = std::wstring(InputSent);
-    newSent.informant = std::wstring(Name);
+    newSent.informant = Name.length() > 0 ? std::wstring(Name) : std::wstring(L"I");
     newSent.begin = 0;
     newSent.end = 0;
     std::wstring beg(Time);
@@ -289,11 +293,14 @@ long CKhParser::AddKhakSent3(const std::wstring& Name, const std::wstring& Time,
         else
             break;
     }
-    for (std::wstring::iterator it = newSent.informant.end() - 1; it != newSent.informant.begin(); --it) {
-        if (*it == L' ' || *it == L'\t')
-            end--;
-        else
-            break;
+    if (newSent.informant.length() > 0)
+    {
+        for (std::wstring::iterator it = newSent.informant.end() - 1; it != newSent.informant.begin(); --it) {
+            if (*it == L' ' || *it == L'\t')
+                end--;
+            else
+                break;
+        }
     }
     newSent.informant = newSent.informant.substr(begin, end);
     if (names.find(newSent.informant) == names.end())
@@ -310,6 +317,8 @@ long CKhParser::AddKhakSent3(const std::wstring& Name, const std::wstring& Time,
 
 long CKhParser::AddRusSent(const std::wstring& InputSent)
 {
+    if (InputSent.length() > 0)
+        lvlExist[Rus_Sent] = 1;
     if (sentences.size() > 0) {
         SentVct::iterator it = sentences.end() - 1;
         it->rus_sent = std::wstring(InputSent);
@@ -317,6 +326,22 @@ long CKhParser::AddRusSent(const std::wstring& InputSent)
         while (pos != std::wstring::npos) {
             it->rus_sent.replace(pos, 1, L"");
             pos = it->rus_sent.find(0x1f);
+        }
+    }
+    return 0;
+}
+
+long CKhParser::AddTranscription(const std::wstring& InputSent)
+{
+    if (InputSent.length() > 0)
+        lvlExist[Transcr] = 1;
+    if (sentences.size() > 0) {
+        SentVct::iterator it = sentences.end() - 1;
+        it->transcr = std::wstring(InputSent);
+        size_t pos = it->transcr.find(0x1f);
+        while (pos != std::wstring::npos) {
+            it->transcr.replace(pos, 1, L"");
+            pos = it->transcr.find(0x1f);
         }
     }
     return 0;

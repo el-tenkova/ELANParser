@@ -171,7 +171,10 @@ long CKhParser::SaveToELANFlexTime(const std::string& ElanPath)
             }
             unsigned long long refid = id;
 
-            id = writeKhakSent(elan, id, simple);
+            //id = writeKhakSent(elan, id, simple);
+            id = writeFirstTier(elan, id, simple);
+
+            id = writeTranscription(elan, id);
 
             unsigned long long refidWords = id;
 
@@ -395,6 +398,8 @@ void CKhParser::writeTierTail(std::wofstream& ef)
 
 unsigned long long CKhParser::writeKhakSent(std::wofstream& ef, unsigned long long& id, const stepType timeStep)
 {
+    if (lvlExist.find(Kh_Sent) == lvlExist.end())
+        return id;
     unsigned long long time1 = 1;
     unsigned long long time2 = 1;
     std::wstring lvlName = lvlNames[Kh_Sent];
@@ -421,8 +426,54 @@ unsigned long long CKhParser::writeKhakSent(std::wofstream& ef, unsigned long lo
     return id;
 }
 
+unsigned long long CKhParser::writeFirstTier(std::wofstream& ef, unsigned long long& id, const stepType timeStep)
+{
+    unsigned long long time1 = 1;
+    unsigned long long time2 = 1;
+    std::wstring lvlName = lvlNames[Kh_Sent];
+    if (lvlExist.find(Kh_Sent) == lvlExist.end())
+    {
+        if (lvlExist.find(Transcr) != lvlExist.end())
+            lvlName = lvlNames[Transcr];
+        else if (lvlExist.find(Rus_Sent) != lvlExist.end())
+            lvlName = lvlNames[Rus_Sent];
+        else
+            return id;
+    }
+    std::wstring refLvlName;
+    appendName(lvlName, refLvlName);
+    writeTierHeader(ef, lvlName, L"paragraph", L"", cur_name);
+
+    SentVct::iterator it = sentences.begin();
+    for (; it != sentences.end(); ++it) {
+        if (timeStep == simple)
+            time2 = time1 + 1;
+        else
+            time2 = time1 + it->size;
+        if (it->informant == cur_name) {
+            if (lvlExist.find(Kh_Sent) != lvlExist.end())
+                writeAnno(ef, it->khak_sent, id, time1, time2);
+            else if (lvlExist.find(Transcr) != lvlExist.end())
+                writeAnno(ef, it->transcr, id, time1, time2);
+            else
+                writeAnno(ef, it->rus_sent, id, time1, time2);
+            it->id = id;
+            id++;
+            it->time1 = time1;
+            it->time2 = time2;
+        }
+        time1 = time2 + 1;
+    }
+    writeTierTail(ef);
+    return id;
+}
+
 unsigned long long CKhParser::writeRusSent(std::wofstream& ef, unsigned long long& id)
 {
+    if (lvlExist.find(Rus_Sent) == lvlExist.end())
+        return id;
+    if (lvlExist.find(Kh_Sent) == lvlExist.end() && lvlExist.find(Transcr) == lvlExist.end())
+        return id;
     std::wstring lvlName = lvlNames[Rus_Sent];
     std::wstring khLvlName = lvlNames[Kh_Sent];
     appendName(lvlName, khLvlName);
@@ -441,8 +492,34 @@ unsigned long long CKhParser::writeRusSent(std::wofstream& ef, unsigned long lon
     return id;
 }
 
+unsigned long long CKhParser::writeTranscription(std::wofstream& ef, unsigned long long& id)
+{
+    if (lvlExist.find(Transcr) == lvlExist.end())
+        return id;
+    if (lvlExist.find(Kh_Sent) == lvlExist.end())
+        return id;
+    std::wstring lvlName = lvlNames[Transcr];
+    std::wstring khLvlName = lvlNames[Kh_Sent];
+    appendName(lvlName, khLvlName);
+
+    writeTierHeader(ef, lvlName, L"association", khLvlName, cur_name);
+
+    SentVct::iterator it = sentences.begin();
+    unsigned long long previous = (unsigned long long)(-1);
+    for (; it != sentences.end(); ++it) {
+        if (it->informant == cur_name) {
+            writeRefAnno(ef, it->transcr, id, it->id, previous);
+            id++;
+        }
+    }
+    writeTierTail(ef);
+    return id;
+}
+
 unsigned long long CKhParser::writeWords(std::wofstream& ef, unsigned long long& id)
 {
+    if (lvlExist.find(Kh_Sent) == lvlExist.end())
+        return id;
     unsigned long long time1 = 1;
     unsigned long long time2 = 1;
     std::wstring lvlName = lvlNames[Kh_Words];
@@ -476,7 +553,8 @@ unsigned long long CKhParser::writeWords(std::wofstream& ef, unsigned long long&
 
 unsigned long long CKhParser::writeWordsAsRef(std::wofstream& ef, unsigned long long& id, unsigned long long refid)
 {
-
+    if (lvlExist.find(Kh_Sent) == lvlExist.end())
+        return id;
     std::wstring lvlName = lvlNames[Kh_Words];
     std::wstring khLvlName = lvlNames[Kh_Sent];
     appendName(lvlName, khLvlName);
@@ -491,6 +569,8 @@ unsigned long long CKhParser::writeWordsAsRef(std::wofstream& ef, unsigned long 
 
 unsigned long long CKhParser::writeKhakHoms(std::wofstream& ef, unsigned long long& id)
 {
+    if (lvlExist.find(Kh_Sent) == lvlExist.end())
+        return id;
     unsigned long long time1 = 1;
     unsigned long long time2 = 1;
     std::wstring lvlName = lvlNames[Kh_Homonyms];
@@ -532,7 +612,8 @@ unsigned long long CKhParser::writeKhakHoms(std::wofstream& ef, unsigned long lo
 
 unsigned long long CKhParser::writeKhakHomsAsRef(std::wofstream& ef, unsigned long long& id, unsigned long long refid)
 {
-
+    if (lvlExist.find(Kh_Sent) == lvlExist.end())
+        return id;
     std::wstring lvlName = lvlNames[Kh_Homonyms];
     std::wstring khLvlName = lvlNames[Kh_Words];
     appendName(lvlName, khLvlName);
@@ -547,6 +628,8 @@ unsigned long long CKhParser::writeKhakHomsAsRef(std::wofstream& ef, unsigned lo
 
 unsigned long long CKhParser::writeKhakMorphems(std::wofstream& ef, unsigned long long& id)
 {
+    if (lvlExist.find(Kh_Sent) == lvlExist.end())
+        return id;
     unsigned long long time1 = 1;
     unsigned long long time2 = 1;
     std::wstring lvlName = lvlNames[Kh_Morphems];
@@ -647,6 +730,8 @@ unsigned long long CKhParser::writeRefTier(std::wofstream& ef, unsigned long lon
 
 unsigned long long CKhParser::writeRusMorphems(std::wofstream& ef, unsigned long long& id, unsigned long long& refid)
 {
+    if (lvlExist.find(Kh_Sent) == lvlExist.end())
+        return id;
     std::wstring lvlName = lvlNames[Rus_Morphems];
     std::wstring khLvlName = lvlNames[Kh_Morphems];
     appendName(lvlName, khLvlName);
@@ -675,6 +760,8 @@ unsigned long long CKhParser::writeEngMorphems(std::wofstream& ef, unsigned long
 
 unsigned long long CKhParser::writeRusHoms(std::wofstream& ef, unsigned long long& id, unsigned long long& refid)
 {
+    if (lvlExist.find(Kh_Sent) == lvlExist.end())
+        return id;
     std::wstring lvlName = lvlNames[Rus_Homonyms];
     std::wstring khLvlName = lvlNames[Kh_Homonyms];
     appendName(lvlName, khLvlName);
@@ -703,6 +790,8 @@ unsigned long long CKhParser::writeEngHoms(std::wofstream& ef, unsigned long lon
 
 unsigned long long CKhParser::writeLemma(std::wofstream& ef, unsigned long long& id, unsigned long long& refid)
 {
+    if (lvlExist.find(Kh_Sent) == lvlExist.end())
+        return id;
     std::wstring lvlName = lvlNames[Kh_Lemma];
     std::wstring khLvlName = lvlNames[Kh_Homonyms];
     appendName(lvlName, khLvlName);
@@ -717,6 +806,8 @@ unsigned long long CKhParser::writeLemma(std::wofstream& ef, unsigned long long&
 
 unsigned long long CKhParser::writePartOfSpeech(std::wofstream& ef, unsigned long long& id, unsigned long long& refid)
 {
+    if (lvlExist.find(Kh_Sent) == lvlExist.end())
+        return id;
     std::wstring lvlName = lvlNames[Kh_PartOfSpeech];
     std::wstring khLvlName = lvlNames[Kh_Homonyms];
     appendName(lvlName, khLvlName);

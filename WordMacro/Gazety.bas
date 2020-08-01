@@ -39,8 +39,8 @@ Sub writeColumn(theDoc As Document, number As Long, Table1 As table)
         End If
         If cs <> 0 Then
             For j = 1 To cs
-                Table1.Cell(count, number).Range.Text = para.Range.Sentences.item(j).Text
-                Table1.Cell(count, number).Range.Find.Execute findtext:="^0013", replacewith:="", Replace:=wdReplaceAll
+                Table1.cell(count, number).Range.text = para.Range.Sentences.item(j).text
+                Table1.cell(count, number).Range.Find.Execute findtext:="^0013", replacewith:="", Replace:=wdReplaceAll
                 If count = 100 Then
                     Exit For
                 End If
@@ -96,25 +96,25 @@ Sub ParallelToGlossed()
         'первая строка - предложение на хакасском
         'последняя строка - предложение на русском
         ' все остальные строки - слова + результаты парсирования
-        Dim curCell As Cell
-        Set curCell = Table1.Cell(1, 1)
-        Dim newCell As Cell
+        Dim curCell As cell
+        Set curCell = Table1.cell(1, 1)
+        Dim newCell As cell
         
         For i = 1 To cr
-            c = curCell.Range.Words.count
+            c = curCell.Range.words.count
             If c > 1 Then
                 ReDim arRows(c)
-                arRows(0) = curCell.Range.Text
+                arRows(0) = curCell.Range.text
                 r = 1
                 For j = 1 To c - 1
-                    ch = Mid(curCell.Range.Words.item(j), 1, 1)
+                    ch = Mid(curCell.Range.words.item(j), 1, 1)
                     If InStr(punct, ch) = 0 Then
-                        arRows(r) = curCell.Range.Words.item(j)
+                        arRows(r) = curCell.Range.words.item(j)
                         r = r + 1
                     End If
                 Next j
                 Set curCell = curCell.Next
-                arRows(r) = curCell.Range.Text
+                arRows(r) = curCell.Range.text
                 r = r + 1
             Else
                 Set curCell = curCell.Next
@@ -129,21 +129,21 @@ Sub ParallelToGlossed()
             newTable.AllowAutoFit = True
             
             newTable.Rows(1).Cells.Merge
-            newTable.Rows(1).Range.Text = arRows(0)
+            newTable.Rows(1).Range.text = arRows(0)
             newTable.Rows(1).Range.Find.Execute findtext:="^0013", replacewith:="", Replace:=wdReplaceAll
             newTable.Rows(r).Cells.Merge
-            newTable.Rows(r).Range.Text = arRows(r - 1)
+            newTable.Rows(r).Range.text = arRows(r - 1)
             newTable.Rows(r).Range.Find.Execute findtext:="^0013", replacewith:="", Replace:=wdReplaceAll
             
-            Set newCell = newTable.Cell(2, 1)
+            Set newCell = newTable.cell(2, 1)
             For p = 2 To r - 1
-                newCell.Range.Text = arRows(p - 1)
+                newCell.Range.text = arRows(p - 1)
                 Set newCell = newCell.Next
                 Set newCell = newCell.Next
 '                newTable.Cell(p, 1).Range.text = arRows(p - 1)
             Next p
             If newTable.Rows.count > 2 Then
-                Set newCell = newTable.Cell(2, 2)
+                Set newCell = newTable.cell(2, 2)
                 For p = 1 To r - 2
                     res = khPars.DoParse(arRows(p))
                     If res = S_OK Then
@@ -162,7 +162,7 @@ Sub ParallelToGlossed()
                                     Form = Form + ch
                                 Next idx
     
-                                newCell.Range.Text = Form
+                                newCell.Range.text = Form
                                 Set newCell = newCell.Next
                             Next cl
                         Else
@@ -237,25 +237,25 @@ Sub ParallelToEAF()
         'первая строка - предложение на хакасском
         'последняя строка - предложение на русском
         ' все остальные строки - слова + результаты парсирования
-        Dim curCell As Cell
-        Set curCell = Table1.Cell(1, 1)
-        Dim newCell As Cell
+        Dim curCell As cell
+        Set curCell = Table1.cell(1, 1)
+        Dim newCell As cell
         
         For i = 1 To cr
-            c = curCell.Range.Words.count
+            c = curCell.Range.words.count
             If c > 1 Then
                 ReDim arRows(c)
-                arRows(0) = curCell.Range.Text
+                arRows(0) = curCell.Range.text
                 r = 1
                 For j = 1 To c - 1
-                    ch = Mid(curCell.Range.Words.item(j), 1, 1)
+                    ch = Mid(curCell.Range.words.item(j), 1, 1)
                     If InStr(punct, ch) = 0 Then
-                        arRows(r) = curCell.Range.Words.item(j)
+                        arRows(r) = curCell.Range.words.item(j)
                         r = r + 1
                     End If
                 Next j
                 Set curCell = curCell.Next
-                arRows(r) = curCell.Range.Text
+                arRows(r) = curCell.Range.text
                 r = r + 1
             Else
                 Set curCell = curCell.Next
@@ -315,29 +315,29 @@ Sub ParallelToEAFWithName()
     If res = S_OK Then
         Dim c As Integer
         
-        Dim curCell As Cell
-        Set curCell = Table1.Cell(1, 1)
+        Dim curCell As cell
+        Set curCell = Table1.cell(1, 1)
 '        Dim newCell As cell
         Dim name As String
         For i = 1 To cr
-            name = Trim$(curCell.Range.Text)
+            name = Trim$(curCell.Range.text)
             Set curCell = curCell.Next
-            c = curCell.Range.Words.count
+            c = curCell.Range.words.count
             If c > 1 Then
                 ReDim arRows(c + 2)
                 arRows(0) = name
                 r = 1
-                arRows(r) = curCell.Range.Text 'хакасское предложение
+                arRows(r) = curCell.Range.text 'хакасское предложение
                 r = r + 2
                 For j = 1 To c - 1
-                    ch = Mid(curCell.Range.Words.item(j), 1, 1)
+                    ch = Mid(curCell.Range.words.item(j), 1, 1)
                     If InStr(punct, ch) = 0 Then
-                        arRows(r) = curCell.Range.Words.item(j)
+                        arRows(r) = curCell.Range.words.item(j)
                         r = r + 1
                     End If
                 Next j
                 Set curCell = curCell.Next
-                arRows(r) = curCell.Range.Text 'русское предложение
+                arRows(r) = curCell.Range.text 'русское предложение
                 r = r + 1
             Else
                 Set curCell = curCell.Next
@@ -367,8 +367,8 @@ Sub ParallelToEAFWithName()
     Call khPars.Terminate
     
 End Sub
-Function getCellByName(name As String, rgSize As Integer, rgTitles() As String, rgIdx() As Integer, startCell As Cell, cc As Integer) As Cell
-    Dim curCell As Cell
+Function getCellByName(name As String, rgSize As Integer, rgTitles() As String, rgIdx() As Integer, startCell As cell, cc As Integer) As cell
+    Dim curCell As cell
     Set curCell = startCell
     For i = 0 To rgSize
         If StrComp(name, rgTitles(i)) = 0 Then
@@ -384,23 +384,23 @@ Function getCellByName(name As String, rgSize As Integer, rgTitles() As String, 
     Next i
     Set getCellByName = curCell
 End Function
-Function getName(rgTitles() As String, rgIdx() As Integer, startCell As Cell, cc As Integer) As Cell
+Function getName(rgTitles() As String, rgIdx() As Integer, startCell As cell, cc As Integer) As cell
     Set getName = getCellByName("name", 5, rgTitles, rgIdx, startCell, cc)
 End Function
-Function getTime(rgTitles() As String, rgIdx() As Integer, startCell As Cell, cc As Integer) As Cell
+Function getTime(rgTitles() As String, rgIdx() As Integer, startCell As cell, cc As Integer) As cell
     Set getTime = getCellByName("time", 5, rgTitles, rgIdx, startCell, cc)
 End Function
-Function getTranscription(rgTitles() As String, rgIdx() As Integer, startCell As Cell, cc As Integer) As Cell
+Function getTranscription(rgTitles() As String, rgIdx() As Integer, startCell As cell, cc As Integer) As cell
     Set getTranscription = getCellByName("transcription", 5, rgTitles, rgIdx, startCell, cc)
 End Function
-Function getKhak(rgTitles() As String, rgIdx() As Integer, startCell As Cell, cc As Integer) As Cell
+Function getKhak(rgTitles() As String, rgIdx() As Integer, startCell As cell, cc As Integer) As cell
     Set getKhak = getCellByName("khak", 5, rgTitles, rgIdx, startCell, cc)
 End Function
-Function getRus(rgTitles() As String, rgIdx() As Integer, startCell As Cell, cc As Integer) As Cell
+Function getRus(rgTitles() As String, rgIdx() As Integer, startCell As cell, cc As Integer) As cell
     Set getRus = getCellByName("rus", 5, rgTitles, rgIdx, startCell, cc)
 End Function
-Function nextRowCell(startCell As Cell, cc As Integer) As Cell
-    Dim curCell As Cell
+Function nextRowCell(startCell As cell, cc As Integer) As cell
+    Dim curCell As cell
     Set curCell = startCell
     For i = 0 To cc - 1
         Set curCell = curCell.Next
@@ -451,15 +451,15 @@ Sub ParallelToEAFWithNameAndTime()
     If res = S_OK Then
         Dim c As Integer
         
-        Dim curCell As Cell
-        Set curCell = Table1.Cell(1, 1)
+        Dim curCell As cell
+        Set curCell = Table1.cell(1, 1)
         Dim cc As Integer
         cc = Table1.Rows.item(1).Cells.count
         For j = 0 To 4
             rgIdx(j) = -1
-            Set curCell = Table1.Cell(1, 1)
+            Set curCell = Table1.cell(1, 1)
             For i = 0 To cc - 1
-                txt = Trim$(curCell.Range.Text)
+                txt = Trim$(curCell.Range.text)
                 txt = Mid(txt, 1, Len(txt) - 2)
                 If StrComp(txt, rgTitles(j)) = 0 Then
                     rgIdx(j) = i
@@ -470,25 +470,25 @@ Sub ParallelToEAFWithNameAndTime()
         Next j
         Dim name As String
         Dim time As String
-        Dim startCell As Cell
-        Set startCell = nextRowCell(Table1.Cell(1, 1), cc)
+        Dim startCell As cell
+        Set startCell = nextRowCell(Table1.cell(1, 1), cc)
         For i = 2 To cr
             name = ""
             Set curCell = getName(rgTitles, rgIdx, startCell, cc)
             If Not curCell Is Nothing Then
-                name = Trim$(curCell.Range.Text)
+                name = Trim$(curCell.Range.text)
             End If
             time = ""
             Set curCell = getTime(rgTitles, rgIdx, startCell, cc)
             If Not curCell Is Nothing Then
-                time = Trim$(curCell.Range.Text)
+                time = Trim$(curCell.Range.text)
             End If
             Set curCell = getKhak(rgTitles, rgIdx, startCell, cc)
             c = 0
             khak = ""
             If Not curCell Is Nothing Then
-                khak = curCell.Range.Text 'хакасское предложение
-                c = curCell.Range.Words.count
+                khak = curCell.Range.text 'хакасское предложение
+                c = curCell.Range.words.count
             End If
             ReDim arRows(c + 5)
             arRows(0) = name
@@ -497,9 +497,9 @@ Sub ParallelToEAFWithNameAndTime()
             If c > 1 Then
                 r = 3
                 For j = 1 To c - 1
-                    ch = Mid(curCell.Range.Words.item(j), 1, 1)
+                    ch = Mid(curCell.Range.words.item(j), 1, 1)
                     If InStr(punct, ch) = 0 Then
-                        arRows(r) = curCell.Range.Words.item(j)
+                        arRows(r) = curCell.Range.words.item(j)
                         r = r + 1
                     End If
                 Next j
@@ -509,14 +509,14 @@ Sub ParallelToEAFWithNameAndTime()
             rus = ""
             Set curCell = getRus(rgTitles, rgIdx, startCell, cc) 'curCell.Next
             If Not curCell Is Nothing Then
-                rus = curCell.Range.Text
+                rus = curCell.Range.text
             End If
             arRows(r) = rus 'русское предложение
             r = r + 1
             transcr = ""
             Set curCell = getTranscription(rgTitles, rgIdx, startCell, cc) 'curCell.Next
             If Not curCell Is Nothing Then
-                transcr = curCell.Range.Text
+                transcr = curCell.Range.text
             End If
             arRows(r) = transcr 'транскрипция
             r = r + 1
@@ -528,10 +528,14 @@ Sub ParallelToEAFWithNameAndTime()
             transcr = ""
             rus = ""
             For p = 0 To r - 1
-                If p = 0 And Len(arRows(p)) > 2 Then
-                    name = Mid(arRows(p), 1, Len(arRows(p)) - 2)
-                ElseIf p = 1 And Len(arRows(p)) > 2 Then
-                    time = Mid(arRows(p), 1, Len(arRows(p)) - 2)
+                If p = 0 Then
+                    If Len(arRows(p)) > 2 Then
+                        name = Mid(arRows(p), 1, Len(arRows(p)) - 2)
+                    End If
+                ElseIf p = 1 Then
+                    If Len(arRows(p)) > 2 Then
+                        time = Mid(arRows(p), 1, Len(arRows(p)) - 2)
+                    End If
                 ElseIf p = 2 Then
                     If Len(arRows(p)) > 2 Then
                         khak = Mid(arRows(p), 1, Len(arRows(p)) - 2)
@@ -556,7 +560,7 @@ Sub ParallelToEAFWithNameAndTime()
         Next i
     End If
     
-    Call khPars.SaveToELANFlexTime(actName & ".eaf")
+    'Call khPars.SaveToELANFlexTime(actName & ".eaf")
     Call khPars.Terminate
     
 End Sub

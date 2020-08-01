@@ -286,6 +286,8 @@ long CKhParser::AddKhakSent3(const std::wstring& Name, const std::wstring& Time,
             seconds = std::stoi(beg.substr(pt + 1));
     }
     newSent.begin = (minutes * 60 + seconds) * 1000;
+    if (sentences.size() > 0 && newSent.begin == 0)
+        newSent.begin = sentences.size() * 5000;
     size_t begin = 0, end = newSent.informant.length();
     for (std::wstring::iterator it = newSent.informant.begin(); it != newSent.informant.end(); ++it) {
         if (*it == L' ' || *it == L'\x09')

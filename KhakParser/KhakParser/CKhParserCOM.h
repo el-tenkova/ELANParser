@@ -2,6 +2,7 @@
 #define __OROSSPARSER_H_
 
 #include <atlcom.h>
+#include <map>
 
 #include "resource.h"       // main symbols
 
@@ -43,6 +44,9 @@ public:
 protected:
     int safeArraySize;
     CKhParser pureParser;
+    std::map<wchar_t, wchar_t> symbols;
+
+    void mapFileName(BSTR fileName);
 };
 
 #endif

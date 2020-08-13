@@ -20,6 +20,7 @@ long CKhParser::SaveToELAN(const std::string& ElanPath)
         writeHeader(elan);
 
 //        writeTimes(elan);
+        calcSentTime();
         writeSentOnlyTimes(elan);
 
         unsigned long long id = 0;

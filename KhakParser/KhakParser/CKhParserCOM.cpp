@@ -6,6 +6,21 @@
 STDMETHODIMP CKhParserCOM::Init(int cSafeArr, BSTR _www, BSTR _dictPath, BSTR _notfoundPath, long* hRes)
 {
     safeArraySize = cSafeArr;
+
+    symbols.insert(std::pair<wchar_t, wchar_t>(0x0492, 0x0413));
+    symbols.insert(std::pair<wchar_t, wchar_t>(0x0493, 0x0433));
+    symbols.insert(std::pair<wchar_t, wchar_t>(0x04CB, 0x0427));
+    symbols.insert(std::pair<wchar_t, wchar_t>(0x04CC, 0x0447));
+    symbols.insert(std::pair<wchar_t, wchar_t>(0x04A3, 0x043D));
+    symbols.insert(std::pair<wchar_t, wchar_t>(0x04A2, 0x041D));
+    symbols.insert(std::pair<wchar_t, wchar_t>(0x04E7, 0x043E));
+    symbols.insert(std::pair<wchar_t, wchar_t>(0x04E6, 0x041E));
+    symbols.insert(std::pair<wchar_t, wchar_t>(0x04F1, 0x0443));
+    symbols.insert(std::pair<wchar_t, wchar_t>(0x04F0, 0x0423));
+    symbols.insert(std::pair<wchar_t, wchar_t>(0x0456, 0x0438));
+
+    mapFileName(_dictPath);
+    mapFileName(_notfoundPath);
     char tmp[512] = "";
     size_t len;
     _locale_t locale = _create_locale(LC_ALL, "ru-RU");
@@ -103,6 +118,7 @@ HRESULT CKhParserCOM::AddTranscription(BSTR InputSent, long* hRes)
 
 HRESULT CKhParserCOM::SaveToELAN(BSTR ElanPath, /*[out, retval]*/ long *hRes)
 {
+    mapFileName(ElanPath);
     _locale_t locale = _create_locale(LC_ALL, "ru-RU");
     char tmp[512] = "";
     size_t len = 0;
@@ -114,6 +130,7 @@ HRESULT CKhParserCOM::SaveToELAN(BSTR ElanPath, /*[out, retval]*/ long *hRes)
 }
 HRESULT CKhParserCOM::SaveToELANFlex(BSTR ElanPath, /*[out, retval]*/ long *hRes)
 {
+    mapFileName(ElanPath);
     _locale_t locale = _create_locale(LC_ALL, "ru-RU");
     char tmp[512] = "";
     size_t len = 0;
@@ -125,12 +142,26 @@ HRESULT CKhParserCOM::SaveToELANFlex(BSTR ElanPath, /*[out, retval]*/ long *hRes
 }
 HRESULT CKhParserCOM::SaveToELANFlexTime(BSTR ElanPath, /*[out, retval]*/ long *hRes)
 {
+    mapFileName(ElanPath);
     _locale_t locale = _create_locale(LC_ALL, "ru-RU");
     char tmp[512] = "";
     size_t len = 0;
-    _wcstombs_s_l(&len, tmp, sizeof(tmp), ElanPath, _TRUNCATE, locale);
+    errno_t err = _wcstombs_s_l(&len, tmp, sizeof(tmp), ElanPath, _TRUNCATE, locale);
+    err++;
     std::string elanPath(tmp);
     *hRes = pureParser.SaveToELANFlexTime(elanPath);
     _free_locale(locale);
     return S_OK;
+}
+void CKhParserCOM::mapFileName(BSTR fileName)
+{
+    if (fileName == 0)
+        return;
+    size_t len = wcslen(fileName);
+    for (size_t i = 0; i < len; i++)
+    {
+        std::map<wchar_t, wchar_t>::iterator it = symbols.find(fileName[i]);
+        if (it != symbols.end())
+            fileName[i] = it->second;
+    }
 }

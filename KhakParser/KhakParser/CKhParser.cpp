@@ -219,10 +219,12 @@ long CKhParser::GetNextHomonym(std::wstring& hom)
 
 long CKhParser::AddKhakSent(const std::wstring& InputSent)
 {
+    if (InputSent.length() > 0)
+        lvlExist[Kh_Sent] = 1;
     sent newSent;
     newSent.khak_sent = std::wstring(InputSent);
     newSent.informant = std::wstring(L"");
-    newSent.begin = 0;
+    newSent.begin = sentences.size() * 5000;
     newSent.end = 0;
     size_t pos = newSent.khak_sent.find(0x1f);
     while (pos != std::wstring::npos) {
@@ -236,6 +238,8 @@ long CKhParser::AddKhakSent(const std::wstring& InputSent)
 
 long CKhParser::AddKhakSent2(const std::wstring& Name, const std::wstring& InputSent)
 {
+    if (InputSent.length() > 0)
+        lvlExist[Kh_Sent] = 1;
     sent newSent;
     newSent.khak_sent = std::wstring(InputSent);
     newSent.informant = std::wstring(Name);

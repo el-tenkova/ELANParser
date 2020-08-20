@@ -243,7 +243,7 @@ long CKhParser::AddKhakSent2(const std::wstring& Name, const std::wstring& Input
     sent newSent;
     newSent.khak_sent = std::wstring(InputSent);
     newSent.informant = std::wstring(Name);
-    newSent.begin = 0;
+    newSent.begin = sentences.size() * 5000;
     newSent.end = 0;
     size_t begin = 0, end = newSent.informant.length();
     for (std::wstring::iterator it = newSent.informant.begin(); it != newSent.informant.end(); ++it) {

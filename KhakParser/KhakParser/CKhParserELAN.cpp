@@ -101,6 +101,7 @@ long CKhParser::SaveToELANFlex(const std::string& ElanPath)
 
         writeHeader(elan);
 
+        calcSentTime();
         writeSentOnlyTimes(elan);
 
         unsigned long long id = 0;
